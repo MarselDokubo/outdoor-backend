@@ -71,7 +71,6 @@ jobs:
       - name: Prisma validate
         run: npx prisma validate
 
-      # Use this if you already track migrations in prisma/migrations
       - name: Prisma migrate deploy
         run: npx prisma migrate deploy
 
@@ -85,34 +84,4 @@ jobs:
         run: npm test --if-present
 
       - name: Build
-        run: npm run build
-
-      # Optional smoke test once you add a real health endpoint
-      # - name: Start app
-      #   run: |
-      #     npm run dev > app.log 2>&1 &
-      #     echo $! > app.pid
-      #
-      # - name: Wait for health endpoint
-      #   run: |
-      #     for i in {1..30}; do
-      #       if curl -fsS http://127.0.0.1:3000/health; then
-      #         exit 0
-      #       fi
-      #       sleep 2
-      #     done
-      #     echo "App failed to become ready"
-      #     cat app.log
-      #     exit 1
-      #
-      # - name: Stop app
-      #   if: always()
-      #   run: |
-      #     kill $(cat app.pid) || true
-      #
-      # - name: Upload app log on failure
-      #   if: failure()
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #     name: app-log
-      #     path: app.log
+        run: npm run build --if-present
