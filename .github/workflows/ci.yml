@@ -1,0 +1,118 @@
+name: CI
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - dev
+      - main
+  pull_request:
+    branches:
+      - dev
+      - main
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: outdoor
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres -d outdoor"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/outdoor
+      REDIS_URL: redis://127.0.0.1:6379
+      PORT: 3000
+      JWT_SECRET: test-secret
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Prisma generate
+        run: npx prisma generate
+
+      - name: Prisma validate
+        run: npx prisma validate
+
+      # Use this if you already track migrations in prisma/migrations
+      - name: Prisma migrate deploy
+        run: npx prisma migrate deploy
+
+      - name: Type check
+        run: npm run typecheck --if-present
+
+      - name: Lint
+        run: npm run lint --if-present
+
+      - name: Test
+        run: npm test --if-present
+
+      - name: Build
+        run: npm run build
+
+      # Optional smoke test once you add a real health endpoint
+      # - name: Start app
+      #   run: |
+      #     npm run dev > app.log 2>&1 &
+      #     echo $! > app.pid
+      #
+      # - name: Wait for health endpoint
+      #   run: |
+      #     for i in {1..30}; do
+      #       if curl -fsS http://127.0.0.1:3000/health; then
+      #         exit 0
+      #       fi
+      #       sleep 2
+      #     done
+      #     echo "App failed to become ready"
+      #     cat app.log
+      #     exit 1
+      #
+      # - name: Stop app
+      #   if: always()
+      #   run: |
+      #     kill $(cat app.pid) || true
+      #
+      # - name: Upload app log on failure
+      #   if: failure()
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: app-log
+      #     path: app.log

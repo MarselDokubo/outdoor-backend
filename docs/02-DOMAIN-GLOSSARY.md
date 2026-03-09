@@ -80,3 +80,18 @@ Derived from:
 - Category weighting
 
 Displayed as a heatmap.
+
+## MediaAsset
+A binary file (Image/Video) associated with a Post or Place.
+
+States: > - PENDING: Upload started but not verified.
+
+PROCESSING: Optimization/Transcoding in progress.
+
+READY: Optimized and visible in the Discovery Engine.
+
+CDN (Content Delivery Network)
+The edge-cached layer for serving MediaAssets to users in Port Harcourt to minimize latency.
+
+
+
