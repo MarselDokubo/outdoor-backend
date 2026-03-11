@@ -85,3 +85,37 @@ jobs:
 
       - name: Build
         run: npm run build --if-present
+
+      - name: Start app
+        run: |
+          npx tsx src/main.ts > app.log 2>&1 &
+          echo $! > app.pid
+
+      - name: Wait for health readiness
+        run: |
+          for i in {1..30}; do
+            if curl -fsS http://127.0.0.1:3000/health/ready; then
+              echo "Health check passed"
+              exit 0
+            fi
+            echo "Waiting for app to become ready..."
+            sleep 2
+          done
+
+          echo "App failed readiness check"
+          cat app.log
+          exit 1
+
+      - name: Stop app
+        if: always()
+        run: |
+          if [ -f app.pid ]; then
+            kill "$(cat app.pid)" || true
+          fi
+
+      - name: Upload app log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-log
+          path: app.log
