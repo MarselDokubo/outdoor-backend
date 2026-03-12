@@ -11,6 +11,7 @@ import {
 	connectRedis,
 	disconnectRedis,
 } from "./infrastructure/redis/client";
+import { logger } from "./infrastructure/logging/logger";
 
 const PORT = Number(process.env.PORT ?? 3000);
 const HOST = process.env.HOST ?? "0.0.0.0";
@@ -20,10 +21,10 @@ let server: http.Server | null = null;
 async function start(): Promise<void> {
 	try {
 		await connectPrisma();
-		console.log("[bootstrap] prisma connected");
+		logger.info("prisma connected");
 
 		await connectRedis();
-		console.log("[bootstrap] redis connected");
+		logger.info("redis connected");
 
 		const app = createApp({
 			prisma,
@@ -31,16 +32,19 @@ async function start(): Promise<void> {
 		});
 
 		server = app.listen(PORT, HOST, () => {
-			console.log(`[bootstrap] Outdoor backend listening on http://${HOST}:${PORT}`);
+			logger.info(
+				{ host: HOST, port: PORT },
+				"Outdoor backend listening",
+			);
 		});
 	} catch (error) {
-		console.error("[bootstrap] failed to start application:", error);
+		logger.fatal({ err: error }, "failed to start application");
 		process.exit(1);
 	}
 }
 
 async function shutdown(signal: string): Promise<void> {
-	console.log(`[shutdown] received ${signal}, shutting down gracefully...`);
+	logger.info({ signal }, "shutdown signal received");
 
 	try {
 		if (server) {
@@ -54,18 +58,18 @@ async function shutdown(signal: string): Promise<void> {
 				});
 			});
 
-			console.log("[shutdown] http server closed");
+			logger.info("http server closed");
 		}
 
 		await disconnectRedis();
-		console.log("[shutdown] redis disconnected");
+		logger.info("redis disconnected");
 
 		await disconnectPrisma();
-		console.log("[shutdown] prisma disconnected");
+		logger.info("prisma disconnected");
 
 		process.exit(0);
 	} catch (error) {
-		console.error("[shutdown] graceful shutdown failed:", error);
+		logger.fatal({ err: error }, "graceful shutdown failed");
 		process.exit(1);
 	}
 }
@@ -79,11 +83,10 @@ process.on("SIGTERM", () => {
 });
 
 process.on("unhandledRejection", (reason) => {
-	console.error("[process] unhandled rejection:", reason);
+	logger.error({ err: reason }, "unhandled rejection");
 });
 
 process.on("uncaughtException", (error) => {
-	console.error("[process] uncaught exception:", error);
+	logger.fatal({ err: error }, "uncaught exception");
 });
-
 void start();
