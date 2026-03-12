@@ -21,10 +21,7 @@ let server: http.Server | null = null;
 async function start(): Promise<void> {
 	try {
 		await connectPrisma();
-		logger.info("prisma connected");
-
 		await connectRedis();
-		logger.info("redis connected");
 
 		const app = createApp({
 			prisma,
@@ -62,10 +59,8 @@ async function shutdown(signal: string): Promise<void> {
 		}
 
 		await disconnectRedis();
-		logger.info("redis disconnected");
 
 		await disconnectPrisma();
-		logger.info("prisma disconnected");
 
 		process.exit(0);
 	} catch (error) {
