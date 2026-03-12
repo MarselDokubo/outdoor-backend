@@ -10,19 +10,23 @@ export function requestLoggingMiddleware(
 	const requestId = randomUUID();
 	const startedAt = Date.now();
 
-	res.locals.requestId = requestId;
-	res.locals.logger = logger.child({
+	const requestLogger = logger.child({
 		requestId,
 		method: req.method,
 		path: req.originalUrl,
 	});
 
-	res.locals.logger.info("request received");
+	res.locals.requestId = requestId;
+	res.locals.logger = requestLogger;
+
+	res.setHeader("X-Request-Id", requestId);
+
+	requestLogger.info("request received");
 
 	res.on("finish", () => {
 		const durationMs = Date.now() - startedAt;
 
-		res.locals.logger.info(
+		requestLogger.info(
 			{
 				statusCode: res.statusCode,
 				durationMs,

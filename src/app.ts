@@ -10,6 +10,8 @@ import type { RedisClientType } from "redis";
 import { HealthService } from "./application/services/health.service";
 import { HealthController } from "./interfaces/http/controllers/health.controller";
 import { createHealthRoutes } from "./interfaces/http/routes/health.route";
+import { requestLoggingMiddleware } from "./interfaces/http/middlewares/request-logging.middleware";
+import { logger } from "./infrastructure/logging/logger";
 
 type AppDependencies = {
 	prisma: PrismaClient;

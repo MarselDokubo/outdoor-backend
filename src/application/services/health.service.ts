@@ -1,6 +1,9 @@
 import { performance } from "node:perf_hooks";
+import type { PrismaClient } from "../../generated/prisma/client";
 import type { RedisClientType } from "redis";
-import { PrismaClient } from "../../../src/generated/prisma/client"
+import type { Logger } from "pino";
+import { logger } from "../../infrastructure/logging/logger";
+
 type DependencyStatus = "up" | "down";
 
 type DependencyCheck = {
@@ -35,25 +38,40 @@ export class HealthService {
 		private readonly redis: RedisClientType,
 	) { }
 
-	live(): LiveResponse {
-		return {
+	live(log?: Logger): LiveResponse {
+		const scopedLogger = this.getLogger(log);
+
+		const result: LiveResponse = {
 			status: "ok",
 			service: "outdoor-backend",
 			timestamp: new Date().toISOString(),
 			uptimeSeconds: Math.floor(process.uptime()),
 		};
+
+		scopedLogger.debug(
+			{
+				uptimeSeconds: result.uptimeSeconds,
+			},
+			"liveness check completed",
+		);
+
+		return result;
 	}
 
-	async ready(): Promise<ReadyResponse> {
+	async ready(log?: Logger): Promise<ReadyResponse> {
+		const scopedLogger = this.getLogger(log);
+
+		scopedLogger.info("readiness check started");
+
 		const [postgres, redis] = await Promise.all([
-			this.checkPostgres(),
-			this.checkRedis(),
+			this.checkPostgres(scopedLogger),
+			this.checkRedis(scopedLogger),
 		]);
 
 		const status =
 			postgres.status === "up" && redis.status === "up" ? "ok" : "degraded";
 
-		return {
+		const result: ReadyResponse = {
 			status,
 			service: "outdoor-backend",
 			timestamp: new Date().toISOString(),
@@ -63,45 +81,109 @@ export class HealthService {
 				redis,
 			},
 		};
+
+		scopedLogger.info(
+			{
+				status: result.status,
+				checks: result.checks,
+			},
+			"readiness check completed",
+		);
+
+		return result;
 	}
 
-	async deps(): Promise<ReadyResponse> {
-		return this.ready();
+	async deps(log?: Logger): Promise<ReadyResponse> {
+		const scopedLogger = this.getLogger(log);
+		scopedLogger.debug("dependency check requested");
+		return this.ready(scopedLogger);
 	}
 
-	private async checkPostgres(): Promise<DependencyCheck> {
+	private async checkPostgres(log: Logger): Promise<DependencyCheck> {
 		const started = performance.now();
 
 		try {
 			await this.prisma.$queryRawUnsafe("SELECT 1");
-			return {
-				status: "up",
+
+			const result = {
+				status: "up" as const,
 				latencyMs: Math.round(performance.now() - started),
 			};
+
+			log.debug(
+				{
+					dependency: "postgres",
+					latencyMs: result.latencyMs,
+					status: result.status,
+				},
+				"dependency check passed",
+			);
+
+			return result;
 		} catch (error) {
-			return {
-				status: "down",
+			const result = {
+				status: "down" as const,
 				latencyMs: Math.round(performance.now() - started),
 				error: error instanceof Error ? error.message : "Unknown Postgres error",
 			};
+
+			log.warn(
+				{
+					dependency: "postgres",
+					latencyMs: result.latencyMs,
+					status: result.status,
+					error: result.error,
+				},
+				"dependency check failed",
+			);
+
+			return result;
 		}
 	}
 
-	private async checkRedis(): Promise<DependencyCheck> {
+	private async checkRedis(log: Logger): Promise<DependencyCheck> {
 		const started = performance.now();
 
 		try {
 			await this.redis.ping();
-			return {
-				status: "up",
+
+			const result = {
+				status: "up" as const,
 				latencyMs: Math.round(performance.now() - started),
 			};
+
+			log.debug(
+				{
+					dependency: "redis",
+					latencyMs: result.latencyMs,
+					status: result.status,
+				},
+				"dependency check passed",
+			);
+
+			return result;
 		} catch (error) {
-			return {
-				status: "down",
+			const result = {
+				status: "down" as const,
 				latencyMs: Math.round(performance.now() - started),
 				error: error instanceof Error ? error.message : "Unknown Redis error",
 			};
+
+			log.warn(
+				{
+					dependency: "redis",
+					latencyMs: result.latencyMs,
+					status: result.status,
+					error: result.error,
+				},
+				"dependency check failed",
+			);
+
+			return result;
 		}
+	}
+
+	private getLogger(log?: Logger): Logger {
+		return log ?? logger.child({ component: "HealthService" });
 	}
 }
