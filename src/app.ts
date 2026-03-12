@@ -4,20 +4,25 @@ import express, {
 	type Request,
 	type Response,
 } from "express";
+import type { PrismaClient } from "./generated/prisma/client";
+import type { RedisClientType } from "redis";
 
 import { HealthService } from "./application/services/health.service";
-import { prisma } from "./infrastructure/prisma/client";
-import { redisClient } from "./infrastructure/redis/client";
 import { HealthController } from "./interfaces/http/controllers/health.controller";
 import { createHealthRoutes } from "./interfaces/http/routes/health.route";
 
-export function createApp(): Express {
+type AppDependencies = {
+	prisma: PrismaClient;
+	redis: RedisClientType;
+};
+
+export function createApp({ prisma, redis }: AppDependencies): Express {
 	const app = express();
 
 	app.use(express.json());
 	app.use(express.urlencoded({ extended: true }));
 
-	const healthService = new HealthService(prisma, redisClient);
+	const healthService = new HealthService(prisma, redis);
 	const healthController = new HealthController(healthService);
 
 	app.get("/", (_req: Request, res: Response) => {

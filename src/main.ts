@@ -1,8 +1,16 @@
 import "dotenv/config";
 import http from "node:http";
 import { createApp } from "./app";
-import { connectPrisma, disconnectPrisma } from "./infrastructure/prisma/client";
-import { connectRedis, disconnectRedis } from "./infrastructure/redis/client";
+import {
+	prisma,
+	connectPrisma,
+	disconnectPrisma,
+} from "./infrastructure/prisma/client";
+import {
+	redisClient,
+	connectRedis,
+	disconnectRedis,
+} from "./infrastructure/redis/client";
 
 const PORT = Number(process.env.PORT ?? 3000);
 const HOST = process.env.HOST ?? "0.0.0.0";
@@ -17,7 +25,10 @@ async function start(): Promise<void> {
 		await connectRedis();
 		console.log("[bootstrap] redis connected");
 
-		const app = createApp();
+		const app = createApp({
+			prisma,
+			redis: redisClient,
+		});
 
 		server = app.listen(PORT, HOST, () => {
 			console.log(`[bootstrap] Outdoor backend listening on http://${HOST}:${PORT}`);

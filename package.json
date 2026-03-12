@@ -11,7 +11,9 @@
     "start": "node dist/main.js",
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc --noEmit",
-    "test": "echo \"No tests configured yet\"",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "lint": "echo \"No lint configured yet\""
   },
   "keywords": [],
@@ -31,8 +33,12 @@
     "@types/express": "^5.0.6",
     "@types/node": "^25.2.3",
     "@types/pg": "^8.18.0",
+    "@types/supertest": "^7.2.0",
+    "@vitest/coverage-v8": "^4.0.18",
     "prisma": "^7.4.2",
+    "supertest": "^7.2.2",
     "tsx": "^4.21.0",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.18"
   }
 }
