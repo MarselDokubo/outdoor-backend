@@ -12,6 +12,9 @@ import { HealthController } from "./interfaces/http/controllers/health.controlle
 import { createHealthRoutes } from "./interfaces/http/routes/health.route";
 import { requestLoggingMiddleware } from "./interfaces/http/middlewares/request-logging.middleware";
 import { logger } from "./infrastructure/logging/logger";
+import { errorHandlerMiddleware } from "./interfaces/http/middlewares/error-handler.middleware"
+import { NotFoundError } from "./shared/errors/app-error";
+import { sendSuccess } from "./shared/http/api-response";
 
 type AppDependencies = {
 	prisma: PrismaClient;
@@ -29,9 +32,7 @@ export function createApp({ prisma, redis }: AppDependencies): Express {
 	const healthController = new HealthController(healthService);
 
 	app.get("/", (_req: Request, res: Response) => {
-		res.status(200).json({
-			message: "Outdoor backend is running",
-		});
+		return sendSuccess(res, { message: "Outdoor backend is running", });
 	});
 
 	app.use("/health", createHealthRoutes(healthController));
@@ -53,29 +54,7 @@ export function createApp({ prisma, redis }: AppDependencies): Express {
 		});
 	});
 
-	app.use(
-		(
-			error: unknown,
-			req: Request,
-			res: Response,
-			_next: NextFunction,
-		): void => {
-			const requestLogger = res.locals.logger ?? logger;
-
-			requestLogger.error(
-				{
-					err: error,
-					path: req.originalUrl,
-					method: req.method,
-				},
-				"unhandled request error",
-			);
-
-			res.status(500).json({
-				error: "Internal server error",
-			});
-		},
-	);
+	app.use(errorHandlerMiddleware);
 
 	return app;
 }

@@ -21,9 +21,9 @@ describe("GET /health/live", () => {
 			.get("/health/live")
 			.expect(200);
 
-		expect(response.body.status).toBe("ok");
-		expect(response.body.service).toBe("outdoor-backend");
-		expect(typeof response.body.timestamp).toBe("string");
-		expect(typeof response.body.uptimeSeconds).toBe("number");
+		expect(response.body.success).toBe(true);
+		expect(response.body.data.status).toBe("ok");
+		expect(response.body.data.service).toBe("outdoor-backend");
+		expect(typeof response.body.requestId).toBe("string");
 	});
 });

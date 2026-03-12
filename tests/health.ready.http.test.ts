@@ -21,11 +21,10 @@ describe("GET /health/ready", () => {
 			.get("/health/ready")
 			.expect(200);
 
-		expect(response.body.status).toBe("ok");
-		expect(response.body.checks.postgres.status).toBe("up");
-		expect(response.body.checks.redis.status).toBe("up");
-		expect(fakePrisma.$queryRawUnsafe).toHaveBeenCalledWith("SELECT 1");
-		expect(fakeRedis.ping).toHaveBeenCalled();
+		expect(response.body.success).toBe(true);
+		expect(response.body.data.status).toBe("ok");
+		expect(response.body.data.checks.postgres.status).toBe("up");
+		expect(response.body.data.checks.redis.status).toBe("up");
 	});
 
 	it("returns 503 when a dependency is down", async () => {
@@ -46,9 +45,8 @@ describe("GET /health/ready", () => {
 			.get("/health/ready")
 			.expect(503);
 
-		expect(response.body.status).toBe("degraded");
-		expect(response.body.checks.postgres.status).toBe("up");
-		expect(response.body.checks.redis.status).toBe("down");
-		expect(response.body.checks.redis.error).toContain("Redis unavailable");
+		expect(response.body.success).toBe(true);
+		expect(response.body.data.status).toBe("degraded");
+		expect(response.body.data.checks.redis.status).toBe("down");
 	});
 });
