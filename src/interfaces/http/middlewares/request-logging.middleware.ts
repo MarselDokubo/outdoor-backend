@@ -2,38 +2,34 @@ import { randomUUID } from "node:crypto";
 import type { NextFunction, Request, Response } from "express";
 import { logger } from "../../../infrastructure/logging/logger";
 
-export function requestLoggingMiddleware(
-	req: Request,
-	res: Response,
-	next: NextFunction,
-): void {
-	const requestId = randomUUID();
-	const startedAt = Date.now();
+export function requestLoggingMiddleware(req: Request, res: Response, next: NextFunction): void {
+  const requestId = randomUUID();
+  const startedAt = Date.now();
 
-	const requestLogger = logger.child({
-		requestId,
-		method: req.method,
-		path: req.originalUrl,
-	});
+  const requestLogger = logger.child({
+    requestId,
+    method: req.method,
+    path: req.originalUrl,
+  });
 
-	res.locals.requestId = requestId;
-	res.locals.logger = requestLogger;
+  res.locals.requestId = requestId;
+  res.locals.logger = requestLogger;
 
-	res.setHeader("X-Request-Id", requestId);
+  res.setHeader("X-Request-Id", requestId);
 
-	requestLogger.info("request received");
+  requestLogger.info("request received");
 
-	res.on("finish", () => {
-		const durationMs = Date.now() - startedAt;
+  res.on("finish", () => {
+    const durationMs = Date.now() - startedAt;
 
-		requestLogger.info(
-			{
-				statusCode: res.statusCode,
-				durationMs,
-			},
-			"request completed",
-		);
-	});
+    requestLogger.info(
+      {
+        statusCode: res.statusCode,
+        durationMs,
+      },
+      "request completed",
+    );
+  });
 
-	next();
+  next();
 }

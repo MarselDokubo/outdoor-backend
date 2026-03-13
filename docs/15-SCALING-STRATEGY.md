@@ -23,5 +23,6 @@ H3 grid ensures:
 ## Feed Scaling
 
 Redis ZSET allows:
+
 - O(log N) ranking operations
 - Instant top-N retrieval

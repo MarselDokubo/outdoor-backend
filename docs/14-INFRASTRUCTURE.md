@@ -18,8 +18,10 @@
 ## Redis Configuration
 
 Persistence:
+
 - AOF enabled
 - RDB snapshotting enabled
 
 TTL:
+
 - 30-minute hotspot window

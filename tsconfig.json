@@ -42,13 +42,13 @@
     "isolatedModules": true,
     "noUncheckedSideEffectImports": true,
     "moduleDetection": "force",
-    "skipLibCheck": true,
+    "skipLibCheck": true
   },
-"include": [
+  "include": [
     "src/**/*.ts",
     "src/**/*.d.ts",
     "tests/**/*.ts",
     "prisma.config.ts",
     "vitest.config.ts"
-]
+  ]
 }

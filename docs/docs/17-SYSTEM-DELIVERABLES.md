@@ -1,4 +1,5 @@
 ## Completed
+
 [+] Project structure
 [+] Tech stack
 [+] Domain modelling
@@ -11,12 +12,14 @@
 [+] System health checks
 
 ## In Progress
+
 [-] Testing pipeline
 [-] Observability / Logging pipeline
 
 ## Still Missing / Not Yet Formalized
 
 ### Application Foundation
+
 [ ] App configuration strategy
 [ ] Environment variable strategy
 [ ] Input validation strategy
@@ -27,6 +30,7 @@
 [ ] Seed / fixture data strategy
 
 ### Security & Access
+
 [ ] Authentication
 [ ] Authorization / RBAC
 [ ] Secrets management
@@ -35,6 +39,7 @@
 [ ] Audit trail / admin action logging
 
 ### API & Contract Design
+
 [ ] API contract / endpoint design
 [ ] Request/response DTO standard
 [ ] Versioning strategy
@@ -42,6 +47,7 @@
 [ ] Idempotency strategy where needed
 
 ### Data & State
+
 [ ] Repository pattern / persistence boundary
 [ ] Redis key design formalization
 [ ] Cache invalidation / TTL strategy
@@ -50,6 +56,7 @@
 [ ] Backup / restore strategy
 
 ### Engineering Quality
+
 [ ] Linting / formatting pipeline
 [ ] Code quality rules
 [ ] Branching / release workflow
@@ -58,6 +65,7 @@
 [ ] Definition of done / review checklist
 
 ### Runtime & Operations
+
 [ ] Metrics
 [ ] Alerting
 [ ] Tracing (later)
@@ -68,6 +76,7 @@
 [ ] Runbooks
 
 ### Delivery & Environments
+
 [ ] Local environment standard
 [ ] Test environment
 [ ] Staging environment
@@ -77,9 +86,9 @@
 [ ] Release checklist
 
 ### Product / Platform Governance
+
 [ ] Feature flag strategy
 [ ] Moderation / abuse workflow
 [ ] Privacy / retention policy enforcement
 [ ] Analytics / product telemetry plan
 [ ] Admin / operator tooling plan
-

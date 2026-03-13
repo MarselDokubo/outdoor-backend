@@ -5,11 +5,13 @@
 ## Core Entities
 
 ### City
+
 - id
 - name
 - boundaryPolygon
 
 ### Place
+
 - id
 - cityId
 - name
@@ -19,11 +21,13 @@
 - createdAt
 
 ### User
+
 - id
 - type
 - createdAt
 
 ### Visit
+
 - id
 - userId
 - placeId
@@ -34,6 +38,7 @@
 Immutable.
 
 ### Post
+
 - id
 - userId
 - placeId
@@ -42,6 +47,7 @@ Immutable.
 - createdAt
 
 ### Engagement
+
 - id
 - userId
 - targetType (Post | Place)
@@ -54,6 +60,7 @@ Immutable.
 ## Derived Projections
 
 ### ActivitySnapshot
+
 - placeId
 - visitCountRecent
 - engagementScore
@@ -65,6 +72,7 @@ Recalculated periodically.
 ---
 
 ### ActivityPattern
+
 - placeId
 - dayOfWeek
 - hour
@@ -75,6 +83,7 @@ Historical only.
 ---
 
 ### HotspotCell
+
 - cityId
 - gridLat
 - gridLng

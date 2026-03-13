@@ -35,7 +35,7 @@ Mermaid (Level 1 – Context)
 Copy this into docs/diagrams/system-context.md
 
 C4Context
-    title Outdoor - System Context
+title Outdoor - System Context
 
     Person(visitor, "Visitor", "Discovers places and hotspots")
     Person(creator, "Creator", "Creates location-based content")
@@ -75,7 +75,7 @@ Mobile Client
 
 Mermaid (Level 2 – Container)
 C4Container
-    title Outdoor - Container Diagram
+title Outdoor - Container Diagram
 
     Person(user, "User")
 
@@ -110,14 +110,13 @@ Prisma Adapter
 
 Mermaid (Level 3 – Component)
 flowchart TB
-    subgraph API Server
-        Controller --> Service
-        Service --> Domain
-        Service --> Repository
-        Repository --> Prisma
-        Service --> RedisAdapter
-    end
-
+subgraph API Server
+Controller --> Service
+Service --> Domain
+Service --> Repository
+Repository --> Prisma
+Service --> RedisAdapter
+end
 
 This reflects:
 
@@ -129,29 +128,29 @@ Clean but pragmatic.
 
 🔷 H3 + Redis Hotspot Architecture Diagram
 flowchart LR
-    VisitEvent --> Postgres
-    VisitEvent --> RedisPlaceCounter
-    VisitEvent --> RedisH3Counter
+VisitEvent --> Postgres
+VisitEvent --> RedisPlaceCounter
+VisitEvent --> RedisH3Counter
 
     RedisH3Counter --> Heatmap
     RedisPlaceCounter --> FeedRanking
 
 🔷 Feed Ranking Diagram
 flowchart TB
-    PostCreated --> ComputeScore
-    VisitCreated --> ComputeScore
-    EngagementUpdated --> ComputeScore
+PostCreated --> ComputeScore
+VisitCreated --> ComputeScore
+EngagementUpdated --> ComputeScore
 
     ComputeScore --> RedisZSET
     RedisZSET --> FeedAPI
 
 🔷 Visit Detection Sequence Diagram
 sequenceDiagram
-    participant User
-    participant App
-    participant API
-    participant Redis
-    participant Postgres
+participant User
+participant App
+participant API
+participant Redis
+participant Postgres
 
     User->>App: Opens app
     App->>App: Track location (60m radius)
@@ -171,14 +170,13 @@ feed:city:{cityId}
 feed:user:{userId}
 density:history:{placeId}:{date}
 
-
 All TTL-based except history.
 
 🔷 Scaling Architecture (Visual)
 flowchart LR
-    Mobile --> API1
-    Mobile --> API2
-    Mobile --> API3
+Mobile --> API1
+Mobile --> API2
+Mobile --> API3
 
     API1 --> RedisCluster
     API2 --> RedisCluster
@@ -188,16 +186,15 @@ flowchart LR
     API2 --> PostgresPrimary
     API3 --> PostgresPrimary
 
-
 Stateless API scaling.
 Shared Redis.
 Shared DB.
 
 🔷 Recovery Strategy Diagram
 flowchart LR
-    RedisRestart --> CheckAOF
-    CheckAOF --> RestoreState
-    RestoreState --> ResumeHotspot
+RedisRestart --> CheckAOF
+CheckAOF --> RestoreState
+RestoreState --> ResumeHotspot
 
     IfEmpty --> WorkerRehydrate
     WorkerRehydrate --> RedisRebuild

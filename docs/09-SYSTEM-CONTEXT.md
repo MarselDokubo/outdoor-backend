@@ -23,9 +23,9 @@
 User → Outdoor API → Postgres  
 User → Outdoor API → Redis  
 Worker → Redis  
-Worker → Postgres  
+Worker → Postgres
 
-Map SDK → Outdoor API  
+Map SDK → Outdoor API
 
 Outdoor does NOT expose raw visit trails.
 
@@ -34,11 +34,13 @@ Outdoor does NOT expose raw visit trails.
 ## Responsibility Boundaries
 
 Outdoor owns:
+
 - Visit intelligence
 - Feed ranking
 - Hotspot detection
 - Place lifecycle
 
 External systems handle:
+
 - Base map rendering
 - Navigation routing

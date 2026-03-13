@@ -7,183 +7,182 @@ import { logger } from "../../infrastructure/logging/logger";
 type DependencyStatus = "up" | "down";
 
 type DependencyCheck = {
-	status: DependencyStatus;
-	latencyMs: number;
-	error?: string;
+  status: DependencyStatus;
+  latencyMs: number;
+  error?: string;
 };
 
 type HealthChecks = {
-	postgres: DependencyCheck;
-	redis: DependencyCheck;
+  postgres: DependencyCheck;
+  redis: DependencyCheck;
 };
 
 export type LiveResponse = {
-	status: "ok";
-	service: string;
-	timestamp: string;
-	uptimeSeconds: number;
+  status: "ok";
+  service: string;
+  timestamp: string;
+  uptimeSeconds: number;
 };
 
 export type ReadyResponse = {
-	status: "ok" | "degraded";
-	service: string;
-	timestamp: string;
-	uptimeSeconds: number;
-	checks: HealthChecks;
+  status: "ok" | "degraded";
+  service: string;
+  timestamp: string;
+  uptimeSeconds: number;
+  checks: HealthChecks;
 };
 
 export class HealthService {
-	constructor(
-		private readonly prisma: PrismaClient,
-		private readonly redis: RedisClientType,
-	) { }
+  constructor(
+    private readonly prisma: PrismaClient,
+    private readonly redis: RedisClientType,
+  ) {}
 
-	live(log?: Logger): LiveResponse {
-		const scopedLogger = this.getLogger(log);
+  live(log?: Logger): LiveResponse {
+    const scopedLogger = this.getLogger(log);
 
-		const result: LiveResponse = {
-			status: "ok",
-			service: "outdoor-backend",
-			timestamp: new Date().toISOString(),
-			uptimeSeconds: Math.floor(process.uptime()),
-		};
+    const result: LiveResponse = {
+      status: "ok",
+      service: "outdoor-backend",
+      timestamp: new Date().toISOString(),
+      uptimeSeconds: Math.floor(process.uptime()),
+    };
 
-		scopedLogger.debug(
-			{
-				uptimeSeconds: result.uptimeSeconds,
-			},
-			"liveness check completed",
-		);
+    scopedLogger.debug(
+      {
+        uptimeSeconds: result.uptimeSeconds,
+      },
+      "liveness check completed",
+    );
 
-		return result;
-	}
+    return result;
+  }
 
-	async ready(log?: Logger): Promise<ReadyResponse> {
-		const scopedLogger = this.getLogger(log);
+  async ready(log?: Logger): Promise<ReadyResponse> {
+    const scopedLogger = this.getLogger(log);
 
-		scopedLogger.info("readiness check started");
+    scopedLogger.info("readiness check started");
 
-		const [postgres, redis] = await Promise.all([
-			this.checkPostgres(scopedLogger),
-			this.checkRedis(scopedLogger),
-		]);
+    const [postgres, redis] = await Promise.all([
+      this.checkPostgres(scopedLogger),
+      this.checkRedis(scopedLogger),
+    ]);
 
-		const status =
-			postgres.status === "up" && redis.status === "up" ? "ok" : "degraded";
+    const status = postgres.status === "up" && redis.status === "up" ? "ok" : "degraded";
 
-		const result: ReadyResponse = {
-			status,
-			service: "outdoor-backend",
-			timestamp: new Date().toISOString(),
-			uptimeSeconds: Math.floor(process.uptime()),
-			checks: {
-				postgres,
-				redis,
-			},
-		};
+    const result: ReadyResponse = {
+      status,
+      service: "outdoor-backend",
+      timestamp: new Date().toISOString(),
+      uptimeSeconds: Math.floor(process.uptime()),
+      checks: {
+        postgres,
+        redis,
+      },
+    };
 
-		scopedLogger.info(
-			{
-				status: result.status,
-				checks: result.checks,
-			},
-			"readiness check completed",
-		);
+    scopedLogger.info(
+      {
+        status: result.status,
+        checks: result.checks,
+      },
+      "readiness check completed",
+    );
 
-		return result;
-	}
+    return result;
+  }
 
-	async deps(log?: Logger): Promise<ReadyResponse> {
-		const scopedLogger = this.getLogger(log);
-		scopedLogger.debug("dependency check requested");
-		return this.ready(scopedLogger);
-	}
+  async deps(log?: Logger): Promise<ReadyResponse> {
+    const scopedLogger = this.getLogger(log);
+    scopedLogger.debug("dependency check requested");
+    return this.ready(scopedLogger);
+  }
 
-	private async checkPostgres(log: Logger): Promise<DependencyCheck> {
-		const started = performance.now();
+  private async checkPostgres(log: Logger): Promise<DependencyCheck> {
+    const started = performance.now();
 
-		try {
-			await this.prisma.$queryRawUnsafe("SELECT 1");
+    try {
+      await this.prisma.$queryRawUnsafe("SELECT 1");
 
-			const result = {
-				status: "up" as const,
-				latencyMs: Math.round(performance.now() - started),
-			};
+      const result = {
+        status: "up" as const,
+        latencyMs: Math.round(performance.now() - started),
+      };
 
-			log.debug(
-				{
-					dependency: "postgres",
-					latencyMs: result.latencyMs,
-					status: result.status,
-				},
-				"dependency check passed",
-			);
+      log.debug(
+        {
+          dependency: "postgres",
+          latencyMs: result.latencyMs,
+          status: result.status,
+        },
+        "dependency check passed",
+      );
 
-			return result;
-		} catch (error) {
-			const result = {
-				status: "down" as const,
-				latencyMs: Math.round(performance.now() - started),
-				error: error instanceof Error ? error.message : "Unknown Postgres error",
-			};
+      return result;
+    } catch (error) {
+      const result = {
+        status: "down" as const,
+        latencyMs: Math.round(performance.now() - started),
+        error: error instanceof Error ? error.message : "Unknown Postgres error",
+      };
 
-			log.warn(
-				{
-					dependency: "postgres",
-					latencyMs: result.latencyMs,
-					status: result.status,
-					error: result.error,
-				},
-				"dependency check failed",
-			);
+      log.warn(
+        {
+          dependency: "postgres",
+          latencyMs: result.latencyMs,
+          status: result.status,
+          error: result.error,
+        },
+        "dependency check failed",
+      );
 
-			return result;
-		}
-	}
+      return result;
+    }
+  }
 
-	private async checkRedis(log: Logger): Promise<DependencyCheck> {
-		const started = performance.now();
+  private async checkRedis(log: Logger): Promise<DependencyCheck> {
+    const started = performance.now();
 
-		try {
-			await this.redis.ping();
+    try {
+      await this.redis.ping();
 
-			const result = {
-				status: "up" as const,
-				latencyMs: Math.round(performance.now() - started),
-			};
+      const result = {
+        status: "up" as const,
+        latencyMs: Math.round(performance.now() - started),
+      };
 
-			log.debug(
-				{
-					dependency: "redis",
-					latencyMs: result.latencyMs,
-					status: result.status,
-				},
-				"dependency check passed",
-			);
+      log.debug(
+        {
+          dependency: "redis",
+          latencyMs: result.latencyMs,
+          status: result.status,
+        },
+        "dependency check passed",
+      );
 
-			return result;
-		} catch (error) {
-			const result = {
-				status: "down" as const,
-				latencyMs: Math.round(performance.now() - started),
-				error: error instanceof Error ? error.message : "Unknown Redis error",
-			};
+      return result;
+    } catch (error) {
+      const result = {
+        status: "down" as const,
+        latencyMs: Math.round(performance.now() - started),
+        error: error instanceof Error ? error.message : "Unknown Redis error",
+      };
 
-			log.warn(
-				{
-					dependency: "redis",
-					latencyMs: result.latencyMs,
-					status: result.status,
-					error: result.error,
-				},
-				"dependency check failed",
-			);
+      log.warn(
+        {
+          dependency: "redis",
+          latencyMs: result.latencyMs,
+          status: result.status,
+          error: result.error,
+        },
+        "dependency check failed",
+      );
 
-			return result;
-		}
-	}
+      return result;
+    }
+  }
 
-	private getLogger(log?: Logger): Logger {
-		return log ?? logger.child({ component: "HealthService" });
-	}
+  private getLogger(log?: Logger): Logger {
+    return log ?? logger.child({ component: "HealthService" });
+  }
 }

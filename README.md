@@ -59,24 +59,26 @@ It combines:
 
 ## 🧠 Core Technical Stack
 
-| Concern | Technology |
-|----------|-------------|
-| Language | TypeScript |
-| Runtime | Node.js |
-| API | Express |
-| Database | PostgreSQL |
-| ORM | Prisma |
-| Real-Time Engine | Redis |
-| Geo Indexing | Uber H3 |
-| Containerization | Docker |
-| CI | GitHub Actions |
+| Concern          | Technology     |
+| ---------------- | -------------- |
+| Language         | TypeScript     |
+| Runtime          | Node.js        |
+| API              | Express        |
+| Database         | PostgreSQL     |
+| ORM              | Prisma         |
+| Real-Time Engine | Redis          |
+| Geo Indexing     | Uber H3        |
+| Containerization | Docker         |
+| CI               | GitHub Actions |
 
 ---
 
 ## 🧩 System Architecture
 
 ### Source of Truth
+
 PostgreSQL stores:
+
 - Users
 - Places
 - Visits
@@ -85,14 +87,18 @@ PostgreSQL stores:
 - Historical activity patterns
 
 ### Real-Time Intelligence Layer
+
 Redis stores:
+
 - Live hotspot counters
 - H3 grid density
 - Feed ranking (ZSET)
 - Rolling TTL-based activity windows
 
 ### Background Worker
+
 Handles:
+
 - Feed rebalancing
 - Hotspot rehydration
 - Redis recovery
@@ -111,6 +117,7 @@ Hotspots are computed using:
 - Redis atomic counters
 
 Redis persistence:
+
 - AOF enabled
 - RDB snapshots enabled
 
@@ -134,6 +141,7 @@ Ranking is stored in Redis ZSET for millisecond retrieval.
 ---
 
 ## 🏛 Project Structure
+
 src/
 ├── domain/ # Pure business logic
 ├── application/ # Use cases & orchestration
@@ -144,6 +152,7 @@ src/
 └── config/
 
 Domain layer has no dependency on:
+
 - Prisma
 - Redis
 - Express
@@ -173,6 +182,7 @@ npm install
 docker compose up -d
 
 This starts:
+
 - PostgreSQL
 - Redis (with AOF persistence)
 
@@ -192,6 +202,7 @@ GitHub Actions automatically:
 - Builds project
 
 Triggered on:
+
 - Push to `dev`
 - Push to `main`
 - Pull requests
@@ -230,6 +241,7 @@ Detailed architecture and domain documents available in:
 docs/
 
 Includes:
+
 - Vision
 - Domain Model
 - Business Rules
@@ -243,12 +255,14 @@ Includes:
 ## 🎯 Roadmap
 
 Phase 1:
+
 - Port Harcourt
 - Core discovery engine
 - Hotspot heatmap
 - Feed ranking
 
 Phase 2:
+
 - Multi-city expansion
 - Advanced personalization
 - Event monetization

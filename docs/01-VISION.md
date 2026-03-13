@@ -38,15 +38,18 @@ Users struggle to answer:
 Existing systems fail in different ways:
 
 ### Google Maps
+
 - Static
 - Review-based
 - Not energy-aware
 
 ### TikTok / Instagram
+
 - Content-heavy but geographically noisy
 - Globalized feeds dilute local discovery
 
 ### Event Listings
+
 - Fragmented
 - Often outdated
 - No live density awareness
@@ -94,6 +97,7 @@ This includes:
 Bias is applied through ranking multipliers.
 
 However:
+
 - Exposure dampening prevents monopolization.
 - New venues must have a path to visibility.
 - The ecosystem must remain healthy.
@@ -109,11 +113,13 @@ Outdoor models energy across two independent layers.
 ### 5.1 Real-Time Energy (ActivitySnapshot)
 
 Used for:
+
 - Feed ranking
 - Hotspot heatmap
 - Trending display
 
 Driven by:
+
 - Recent visits
 - Engagement signals
 - Category weighting
@@ -125,11 +131,13 @@ Continuously recalculated.
 ### 5.2 Historical Pattern (ActivityPattern)
 
 Used for:
+
 - Informational display
 - Planning insights
 - Habit visualization
 
 Examples:
+
 - “Usually busy at 9PM”
 - “Peak hours: Friday 10PM”
 
@@ -142,6 +150,7 @@ Does NOT influence ranking.
 Hotspot is a spatial density projection across a city.
 
 It visualizes:
+
 - Concentration of recent visits
 - Engagement-weighted activity
 - Category-influenced intensity
@@ -149,6 +158,7 @@ It visualizes:
 Rendered as a heatmap.
 
 Hotspot is:
+
 - Aggregated
 - Derived
 - Recalculated periodically
@@ -176,7 +186,7 @@ City: Port Harcourt
 Architecture: Modular monolith  
 Database: PostgreSQL  
 ORM: Prisma  
-Partitioning: Logical city-based partition  
+Partitioning: Logical city-based partition
 
 Future cities will expand via logical boundaries.
 
@@ -185,6 +195,7 @@ Future cities will expand via logical boundaries.
 ## 9. Long-Term Vision
 
 Outdoor becomes:
+
 - A city energy index
 - A spatial-social intelligence layer
 - A behavioral urban signal network

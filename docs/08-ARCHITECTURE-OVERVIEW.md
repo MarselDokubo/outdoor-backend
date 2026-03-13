@@ -5,11 +5,13 @@
 Outdoor is built as a **Hybrid Clean Modular Monolith**.
 
 It combines:
+
 - Clean Architecture principles (domain isolation)
 - Layered application design (Controller → Service → Repository)
 - Pragmatic startup velocity
 
 This allows:
+
 - Fast iteration
 - Clear boundaries
 - Replaceable infrastructure
@@ -21,7 +23,7 @@ This allows:
 
 Postgres = Source of Truth  
 Redis = Real-Time Intelligence Layer  
-Domain = Business Logic Authority  
+Domain = Business Logic Authority
 
 Infrastructure is replaceable.
 Domain is protected.
@@ -43,19 +45,19 @@ Domain is protected.
 
 ## 4. Key Technical Decisions
 
-| Concern | Decision |
-|----------|----------|
-| Architecture Style | Hybrid Clean Monolith |
-| Database | PostgreSQL |
-| ORM | Prisma |
-| Real-Time Layer | Redis |
-| Geo Indexing | Uber H3 |
-| Feed Ranking | Redis ZSET |
-| Background Jobs | Separate worker process |
-| Search | PostgreSQL FTS (Phase 1) |
-| Auth | JWT-based custom auth |
-| Visit Detection | 60m radius, 20 min dwell |
-| Hotspot Model | TTL-based Redis counters |
+| Concern            | Decision                 |
+| ------------------ | ------------------------ |
+| Architecture Style | Hybrid Clean Monolith    |
+| Database           | PostgreSQL               |
+| ORM                | Prisma                   |
+| Real-Time Layer    | Redis                    |
+| Geo Indexing       | Uber H3                  |
+| Feed Ranking       | Redis ZSET               |
+| Background Jobs    | Separate worker process  |
+| Search             | PostgreSQL FTS (Phase 1) |
+| Auth               | JWT-based custom auth    |
+| Visit Detection    | 60m radius, 20 min dwell |
+| Hotspot Model      | TTL-based Redis counters |
 
 ---
 
@@ -79,6 +81,7 @@ Outdoor is:
 - A social amplification layer
 
 It is not:
+
 - A static directory
 - A pure social network
 - A passive map tool

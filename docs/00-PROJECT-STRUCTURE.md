@@ -24,7 +24,6 @@ interfaces → application → domain
 infrastructure → application → domain
 workers → application → domain
 
-
 Domain is the core.
 Everything depends on it.
 It depends on nothing.
@@ -38,6 +37,7 @@ This is the **pure business core** of Outdoor.
 This layer is sacred.
 
 No:
+
 - Express
 - Prisma
 - Redis
@@ -83,6 +83,7 @@ Only pure domain concepts.
 ## Responsibility
 
 Encapsulates:
+
 - Business rules
 - Invariants
 - Core algorithms
@@ -220,13 +221,13 @@ They may use infrastructure adapters.
 
 # Dependency Rules
 
-| Layer | Can Depend On |
-|-------|--------------|
-| domain | Nothing |
-| application | domain |
+| Layer          | Can Depend On        |
+| -------------- | -------------------- |
+| domain         | Nothing              |
+| application    | domain               |
 | infrastructure | application + domain |
-| interfaces | application + domain |
-| workers | application + domain |
+| interfaces     | application + domain |
+| workers        | application + domain |
 
 ---
 

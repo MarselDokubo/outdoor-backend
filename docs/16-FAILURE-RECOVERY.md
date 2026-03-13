@@ -3,6 +3,7 @@
 ## Redis Restart
 
 Strategy:
+
 - AOF persistence
 - Graceful background rehydration
 - No user-visible crash

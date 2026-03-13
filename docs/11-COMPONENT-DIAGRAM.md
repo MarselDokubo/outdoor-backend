@@ -23,6 +23,7 @@
 ## Domain Layer
 
 Entities:
+
 - User
 - Place
 - Visit
@@ -32,6 +33,7 @@ Entities:
 - ActivityPattern
 
 Value Objects:
+
 - GeoPoint
 - H3Cell
 - EnergyScore

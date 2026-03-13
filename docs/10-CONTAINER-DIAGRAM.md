@@ -33,4 +33,4 @@
 Client → API → Postgres  
 Client → API → Redis  
 Worker → Redis  
-Worker → Postgres  
+Worker → Postgres
