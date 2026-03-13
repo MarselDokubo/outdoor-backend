@@ -1,4 +1,5 @@
 import type { NextFunction, Request, Response } from "express";
+import { logger } from "../../../infrastructure/logging/logger";
 import { UnauthorizedError } from "../../../shared/errors/app-error";
 import { verifyAccessToken } from "../../../shared/auth/oidc";
 
@@ -22,12 +23,6 @@ function getBearerToken(req: Request): string | null {
   return token;
 }
 
-/**
- * Optional auth attachment:
- * - no Authorization header => continue anonymously
- * - invalid bearer token => 401
- * - valid bearer token => res.locals.auth populated
- */
 export async function attachAuthContext(
   req: Request,
   res: Response,
@@ -44,7 +39,18 @@ export async function attachAuthContext(
     const auth = await verifyAccessToken(token);
     res.locals.auth = auth;
     next();
-  } catch {
+  } catch (error) {
+    const requestLogger = res.locals.logger ?? logger;
+
+    requestLogger.error(
+      {
+        err: error,
+        issuer: process.env.OIDC_ISSUER,
+        audience: process.env.OIDC_AUDIENCE,
+      },
+      "oidc access token verification failed",
+    );
+
     next(new UnauthorizedError("Invalid or expired access token"));
   }
 }

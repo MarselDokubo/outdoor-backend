@@ -22,6 +22,17 @@ services:
     volumes:
       - redis_data:/data
 
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.1
+    container_name: outdoor_keycloak
+    command: start-dev
+    restart: always
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    ports:
+      - "8080:8080"
+
 volumes:
   postgres_data:
   redis_data:

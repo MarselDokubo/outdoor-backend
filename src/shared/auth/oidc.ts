@@ -19,7 +19,7 @@ let jwksResolverPromise: Promise<ReturnType<typeof createRemoteJWKSet>> | undefi
 async function getRemoteJwks() {
   if (!jwksResolverPromise) {
     jwksResolverPromise = (async () => {
-      const wellKnownUrl = new URL("/.well-known/openid-configuration", issuer);
+      const wellKnownUrl = new URL(`${issuer.replace(/\/$/, "")}/.well-known/openid-configuration`);
 
       const response = await fetch(wellKnownUrl);
       if (!response.ok) {
