@@ -2,6 +2,7 @@ import type { NextFunction, Request, Response } from "express";
 import { logger } from "../../../infrastructure/logging/logger";
 import { UnauthorizedError } from "../../../shared/errors/app-error";
 import { verifyAccessToken } from "../../../shared/auth/oidc";
+import { env } from "../../../config/env";
 
 function getBearerToken(req: Request): string | null {
   const authorization = req.header("authorization");
@@ -43,11 +44,16 @@ export async function attachAuthContext(
     const requestLogger = res.locals.logger ?? logger;
 
     requestLogger.error(
-      {
-        err: error,
-        issuer: process.env.OIDC_ISSUER,
-        audience: process.env.OIDC_AUDIENCE,
-      },
+      env.EXPOSE_ERROR_DETAILS
+        ? {
+            err: error,
+            issuer: env.OIDC_ISSUER,
+            audience: env.OIDC_AUDIENCE,
+          }
+        : {
+            issuer: env.OIDC_ISSUER,
+            audience: env.OIDC_AUDIENCE,
+          },
       "oidc access token verification failed",
     );
 

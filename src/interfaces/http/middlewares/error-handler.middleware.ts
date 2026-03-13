@@ -3,6 +3,7 @@ import { ZodError } from "zod";
 import { logger } from "../../../infrastructure/logging/logger";
 import { AppError, ValidationError } from "../../../shared/errors/app-error";
 import { sendError } from "../../../shared/http/api-response";
+import { env } from "../../../config/env";
 
 export function errorHandlerMiddleware(
   error: unknown,
@@ -44,6 +45,14 @@ export function errorHandlerMiddleware(
     statusCode: normalizedError.statusCode,
     code: normalizedError.code,
     message: normalizedError.message,
-    details: normalizedError.details,
+    ...(env.EXPOSE_ERROR_DETAILS
+      ? {
+          details:
+            normalizedError.details ??
+            (error instanceof Error
+              ? { name: error.name, message: error.message, stack: error.stack }
+              : { raw: String(error) }),
+        }
+      : {}),
   });
 }

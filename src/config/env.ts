@@ -32,15 +32,26 @@ function getNumberEnv(name: string, fallback?: number): number {
   return parsed;
 }
 
+const NODE_ENV = getOptionalEnv("NODE_ENV") ?? "development";
+const EXPOSE_ERROR_DETAILS =
+  (getOptionalEnv("EXPOSE_ERROR_DETAILS") ?? (NODE_ENV !== "production" ? "true" : "false")) ===
+  "true";
+
 export const env = {
-  NODE_ENV: getOptionalEnv("NODE_ENV") ?? "development",
+  NODE_ENV,
+  IS_DEV: NODE_ENV === "development",
+  IS_TEST: NODE_ENV === "test",
+  IS_PROD: NODE_ENV === "production",
+
+  EXPOSE_ERROR_DETAILS,
+
+  HOST: getOptionalEnv("HOST") ?? "0.0.0.0",
   PORT: getNumberEnv("PORT", 3000),
 
   DATABASE_URL: getRequiredEnv("DATABASE_URL"),
-  HOST: getOptionalEnv("HOST") ?? "0.0.0.0",
   REDIS_URL: getRequiredEnv("REDIS_URL"),
 
-  LOG_LEVEL: getOptionalEnv("LOG_LEVEL") ?? "info",
+  LOG_LEVEL: getOptionalEnv("LOG_LEVEL") ?? (NODE_ENV === "production" ? "info" : "debug"),
 
   OIDC_ISSUER: getOptionalEnv("OIDC_ISSUER"),
   OIDC_AUDIENCE: getOptionalEnv("OIDC_AUDIENCE"),
