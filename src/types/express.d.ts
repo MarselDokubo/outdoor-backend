@@ -1,5 +1,6 @@
 import type { Logger } from "pino";
 import type { AuthContext } from "../shared/auth/auth-context";
+import type { CurrentUserContext } from "../shared/auth/current-user-context";
 
 interface ValidatedRequestData {
   body?: unknown;
@@ -14,6 +15,7 @@ declare global {
       logger?: Logger;
       validated?: ValidatedRequestData;
       auth?: AuthContext;
+      currentUser?: CurrentUserContext;
     }
   }
 }

@@ -34,7 +34,7 @@ export function createApp({ prisma, redis }: AppDependencies): Express {
 
   app.use("/health", createHealthRoutes(healthController));
 
-  app.use("/auth", createAuthRoutes(authController));
+  app.use("/auth", createAuthRoutes(authController, prisma));
   app.use((_req: Request, res: Response) => {
     const requestLogger = res.locals.logger ?? logger;
 

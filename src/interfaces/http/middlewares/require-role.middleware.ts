@@ -4,14 +4,19 @@ import { ForbiddenError, UnauthorizedError } from "../../../shared/errors/app-er
 
 export function requireRole(...roles: UserRole[]) {
   return (_req: Request, res: Response, next: NextFunction): void => {
-    const auth = res.locals.auth;
+    const currentUser = res.locals.currentUser;
 
-    if (!auth) {
+    if (!currentUser) {
       next(new UnauthorizedError("Authentication required"));
       return;
     }
 
-    const allowed = auth.roles.some((role) => roles.includes(role));
+    if (!currentUser.isActive) {
+      next(new ForbiddenError("User account is inactive"));
+      return;
+    }
+
+    const allowed = roles.includes(currentUser.role);
 
     if (!allowed) {
       next(new ForbiddenError("Insufficient permissions"));
