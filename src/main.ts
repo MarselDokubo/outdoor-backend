@@ -1,12 +1,12 @@
-import "dotenv/config";
+import { env } from "./config/env";
 import type http from "node:http";
 import { createApp } from "./app";
 import { prisma, connectPrisma, disconnectPrisma } from "./infrastructure/prisma/client";
 import { redisClient, connectRedis, disconnectRedis } from "./infrastructure/redis/client";
 import { logger } from "./infrastructure/logging/logger";
 
-const PORT = Number(process.env.PORT ?? 3000);
-const HOST = process.env.HOST ?? "0.0.0.0";
+const PORT = Number(env.PORT ?? 3000);
+const HOST = env.HOST ?? "0.0.0.0";
 
 let server: http.Server | null = null;
 let isShuttingDown = false;

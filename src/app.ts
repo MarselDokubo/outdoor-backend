@@ -9,6 +9,8 @@ import { requestLoggingMiddleware } from "./interfaces/http/middlewares/request-
 import { logger } from "./infrastructure/logging/logger";
 import { errorHandlerMiddleware } from "./interfaces/http/middlewares/error-handler.middleware";
 import { sendSuccess } from "./shared/http/api-response";
+import { AuthController } from "./interfaces/http/controllers/auth.controller";
+import { createAuthRoutes } from "./interfaces/http/routes/auth.route";
 
 type AppDependencies = {
   prisma: PrismaClient;
@@ -17,7 +19,9 @@ type AppDependencies = {
 
 export function createApp({ prisma, redis }: AppDependencies): Express {
   const app = express();
+  const authController = new AuthController();
 
+  app.use("/auth", createAuthRoutes(authController));
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
   app.use(requestLoggingMiddleware);

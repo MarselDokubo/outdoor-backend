@@ -1,10 +1,11 @@
 import type { Logger } from "pino";
+import type { AuthContext } from "../shared/auth/auth-context";
 
-type ValidatedRequestData = {
+interface ValidatedRequestData {
   body?: unknown;
   params?: unknown;
   query?: unknown;
-};
+}
 
 declare global {
   namespace Express {
@@ -12,6 +13,7 @@ declare global {
       requestId?: string;
       logger?: Logger;
       validated?: ValidatedRequestData;
+      auth?: AuthContext;
     }
   }
 }

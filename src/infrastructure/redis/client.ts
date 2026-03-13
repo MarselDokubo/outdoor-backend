@@ -1,8 +1,9 @@
+import { env } from "../../config/env";
 import { createClient, type RedisClientType } from "redis";
 import { logger } from "../logging/logger";
 
 const redisLogger = logger.child({ component: "redis" });
-const redisUrl = process.env.REDIS_URL ?? "redis://127.0.0.1:6379";
+const redisUrl = env.REDIS_URL ?? "redis://127.0.0.1:6379";
 
 export const redisClient: RedisClientType = createClient({
   url: redisUrl,
