@@ -1,11 +1,8 @@
 import type { NextFunction, Request, Response } from "express";
-import type { PrismaClient } from "../../../generated/prisma/client";
+import type { CurrentUserResolverService } from "../../../application/services/current-user-resolver.service";
 import { UnauthorizedError } from "../../../shared/errors/app-error";
-import { CurrentUserResolverService } from "../../../application/services/current-user-resolver.service";
 
-export function resolveCurrentUser(prisma: PrismaClient) {
-  const resolver = new CurrentUserResolverService(prisma);
-
+export function resolveCurrentUser(resolver: CurrentUserResolverService) {
   return async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       if (!res.locals.auth) {

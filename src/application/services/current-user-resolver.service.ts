@@ -1,63 +1,45 @@
-import type { PrismaClient } from "../../generated/prisma/client";
+import type { AuthIdentityRepository } from "../../domain/user/repositories/auth-identity.repository";
+import type { UserRepository } from "../../domain/user/repositories/user.repository";
 import type { AuthContext } from "../../shared/auth/auth-context";
 import type { CurrentUserContext } from "../../shared/auth/current-user-context";
 
 export class CurrentUserResolverService {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(
+    private readonly userRepository: UserRepository,
+    private readonly authIdentityRepository: AuthIdentityRepository,
+  ) {}
 
   async resolve(auth: AuthContext): Promise<CurrentUserContext> {
     const provider = auth.issuer;
     const providerSubject = auth.subject;
 
-    const existingIdentity = await this.prisma.authIdentity.findUnique({
-      where: {
-        provider_providerSubject: {
-          provider,
-          providerSubject,
-        },
-      },
-      include: {
-        user: true,
-      },
+    const existingIdentity = await this.authIdentityRepository.findByProviderSubject({
+      provider,
+      providerSubject,
     });
 
     if (!existingIdentity) {
-      const createdUser = await this.prisma.user.create({
-        data: {
-          email: auth.email ?? null,
-          role: "user",
-        },
+      const user = await this.userRepository.create({
+        email: auth.email ?? null,
+        role: "user",
       });
 
-      const createdIdentity = await this.prisma.authIdentity.create({
-        data: {
-          userId: createdUser.id,
-          provider,
-          providerSubject,
-          providerEmail: auth.email ?? null,
-          emailVerified: auth.emailVerified ?? null,
-          lastLoginAt: new Date(),
-        },
-        include: {
-          user: true,
-        },
-      });
-
-      return this.toCurrentUserContext(createdIdentity.user, auth);
-    }
-
-    const updatedIdentity = await this.prisma.authIdentity.update({
-      where: {
-        id: existingIdentity.id,
-      },
-      data: {
+      const identity = await this.authIdentityRepository.create({
+        userId: user.id,
+        provider,
+        providerSubject,
         providerEmail: auth.email ?? null,
         emailVerified: auth.emailVerified ?? null,
         lastLoginAt: new Date(),
-      },
-      include: {
-        user: true,
-      },
+      });
+
+      return this.toCurrentUserContext(identity.user, auth);
+    }
+
+    const updatedIdentity = await this.authIdentityRepository.updateLogin(existingIdentity.id, {
+      providerEmail: auth.email ?? null,
+      emailVerified: auth.emailVerified ?? null,
+      lastLoginAt: new Date(),
     });
 
     return this.toCurrentUserContext(updatedIdentity.user, auth);
