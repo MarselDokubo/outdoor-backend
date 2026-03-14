@@ -25,7 +25,8 @@
     "db:studio": "prisma studio",
     "db:reset": "prisma migrate reset --force",
     "prepare": "husky",
-    "build": "tsc -p tsconfig.json"
+    "build": "tsc -p tsconfig.json",
+    "worker": "tsx src/workers/main.ts"
   },
   "lint-staged": {
     "*.{ts,js,mjs,cjs,json,md,yml,yaml}": [
@@ -42,9 +43,11 @@
   "dependencies": {
     "@prisma/adapter-pg": "^7.4.2",
     "@prisma/client": "^7.4.2",
+    "bullmq": "^5.71.0",
     "cors": "^2.8.6",
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
+    "ioredis": "^5.10.0",
     "jose": "^6.2.1",
     "pg": "^8.20.0",
     "pino": "^10.3.1",

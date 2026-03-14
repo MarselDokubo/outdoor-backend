@@ -15,6 +15,10 @@ import { createAuthRoutes } from "./interfaces/http/routes/auth.route";
 import { createHealthRoutes } from "./interfaces/http/routes/health.route";
 import { NotFoundError } from "./shared/errors/app-error";
 import { sendSuccess } from "./shared/http/api-response";
+import { NotificationQueueService } from "./application/services/notification-queue.service";
+import { notificationQueue } from "./infrastructure/queues/queues";
+import { NotificationsController } from "./interfaces/http/controllers/notifications.controller";
+import { createNotificationsRoutes } from "./interfaces/http/routes/notifications.route";
 
 interface AppDependencies {
   prisma: PrismaClient;
@@ -37,6 +41,8 @@ export function createApp({ prisma, redis }: AppDependencies): Express {
     userRepository,
     authIdentityRepository,
   );
+  const notificationQueueService = new NotificationQueueService(notificationQueue);
+  const notificationsController = new NotificationsController(notificationQueueService);
   const authController = new AuthController();
 
   app.get("/", (_req: Request, res: Response) => {
@@ -47,7 +53,7 @@ export function createApp({ prisma, redis }: AppDependencies): Express {
 
   app.use("/health", createHealthRoutes(healthController));
   app.use("/auth", createAuthRoutes(authController, currentUserResolver));
-
+  app.use("/notifications", createNotificationsRoutes(notificationsController));
   app.use((req: Request, res: Response, next: NextFunction) => {
     const requestLogger = res.locals.logger ?? logger;
 
