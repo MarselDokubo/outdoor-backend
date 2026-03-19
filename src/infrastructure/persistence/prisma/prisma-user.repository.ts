@@ -1,6 +1,7 @@
 import type { PrismaClient } from "../../../generated/prisma/client";
 import type {
   CreateUserInput,
+  UpdateUserLoginMetadataInput,
   UserRecord,
   UserRepository,
 } from "../../../domain/user/repositories/user.repository";
@@ -12,7 +13,8 @@ export class PrismaUserRepository implements UserRepository {
     const user = await this.prisma.user.create({
       data: {
         email: data.email,
-        role: data.role,
+        displayName: data.displayName ?? null,
+        status: data.status ?? "active",
       },
     });
 
@@ -20,8 +22,30 @@ export class PrismaUserRepository implements UserRepository {
       id: user.id,
       email: user.email,
       displayName: user.displayName,
-      role: user.role,
-      isActive: user.isActive,
+      status: user.status,
+      lastSeenAt: user.lastSeenAt,
+    };
+  }
+
+  async updateLoginMetadata(
+    userId: string,
+    data: UpdateUserLoginMetadataInput,
+  ): Promise<UserRecord> {
+    const user = await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        ...(data.email !== undefined ? { email: data.email } : {}),
+        ...(data.displayName !== undefined ? { displayName: data.displayName } : {}),
+        lastSeenAt: data.lastSeenAt,
+      },
+    });
+
+    return {
+      id: user.id,
+      email: user.email,
+      displayName: user.displayName,
+      status: user.status,
+      lastSeenAt: user.lastSeenAt,
     };
   }
 }

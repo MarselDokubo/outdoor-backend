@@ -17,7 +17,7 @@ function buildAuthContext(overrides: Partial<AuthContext> = {}): AuthContext {
     subject: "provider|user-123",
     issuer: "https://issuer.example.com",
     audience: "outdoor-backend",
-    roles: ["user"],
+    externalRoles: ["user"],
     claims: {},
     ...overrides,
   };
@@ -29,9 +29,15 @@ describe("Auth routes", () => {
     authIdentity: {
       findUnique: vi.fn(),
       update: vi.fn(),
+      create: vi.fn(),
     },
     user: {
       create: vi.fn(),
+      update: vi.fn(),
+    },
+    userRoleAssignment: {
+      findMany: vi.fn(),
+      upsert: vi.fn(),
     },
   } as any;
 
@@ -46,9 +52,16 @@ describe("Auth routes", () => {
 
   beforeEach(() => {
     mockedVerifyAccessToken.mockReset();
+
     fakePrisma.authIdentity.findUnique.mockReset();
     fakePrisma.authIdentity.update.mockReset();
+    fakePrisma.authIdentity.create.mockReset();
+
     fakePrisma.user.create.mockReset();
+    fakePrisma.user.update.mockReset();
+
+    fakePrisma.userRoleAssignment.findMany.mockReset();
+    fakePrisma.userRoleAssignment.upsert.mockReset();
   });
 
   it("GET /auth/me returns 401 when token is missing", async () => {
@@ -88,8 +101,8 @@ describe("Auth routes", () => {
         id: "user-1",
         email: "user@example.com",
         displayName: "Marsel",
-        role: "user",
-        isActive: true,
+        status: "active",
+        lastSeenAt: null,
       },
     });
 
@@ -103,10 +116,29 @@ describe("Auth routes", () => {
         id: "user-1",
         email: "user@example.com",
         displayName: "Marsel",
-        role: "user",
-        isActive: true,
+        status: "active",
+        lastSeenAt: null,
       },
     });
+
+    fakePrisma.user.update.mockResolvedValue({
+      id: "user-1",
+      email: "user@example.com",
+      displayName: "Marsel",
+      status: "active",
+      lastSeenAt: new Date(),
+    });
+
+    fakePrisma.userRoleAssignment.findMany.mockResolvedValue([
+      {
+        id: "ura-1",
+        userId: "user-1",
+        role: "user",
+        assignedBy: null,
+        assignedAt: new Date(),
+        reason: null,
+      },
+    ]);
 
     const response = await request(app)
       .get("/auth/me")
@@ -116,7 +148,8 @@ describe("Auth routes", () => {
     expect(response.body.success).toBe(true);
     expect(response.body.data.user.id).toBe("user-1");
     expect(response.body.data.user.email).toBe("user@example.com");
-    expect(response.body.data.user.role).toBe("user");
+    expect(response.body.data.user.roles).toEqual(["user"]);
+    expect(response.body.data.user.status).toBe("active");
   });
 
   it("GET /auth/admin-test returns 403 when user lacks admin role", async () => {
@@ -132,8 +165,8 @@ describe("Auth routes", () => {
         id: "user-1",
         email: "user@example.com",
         displayName: null,
-        role: "user",
-        isActive: true,
+        status: "active",
+        lastSeenAt: null,
       },
     });
 
@@ -147,10 +180,29 @@ describe("Auth routes", () => {
         id: "user-1",
         email: "user@example.com",
         displayName: null,
-        role: "user",
-        isActive: true,
+        status: "active",
+        lastSeenAt: null,
       },
     });
+
+    fakePrisma.user.update.mockResolvedValue({
+      id: "user-1",
+      email: "user@example.com",
+      displayName: null,
+      status: "active",
+      lastSeenAt: new Date(),
+    });
+
+    fakePrisma.userRoleAssignment.findMany.mockResolvedValue([
+      {
+        id: "ura-1",
+        userId: "user-1",
+        role: "user",
+        assignedBy: null,
+        assignedAt: new Date(),
+        reason: null,
+      },
+    ]);
 
     const response = await request(app)
       .get("/auth/admin-test")
@@ -174,8 +226,8 @@ describe("Auth routes", () => {
         id: "user-admin-1",
         email: "admin@example.com",
         displayName: "Admin",
-        role: "admin",
-        isActive: true,
+        status: "active",
+        lastSeenAt: null,
       },
     });
 
@@ -189,10 +241,37 @@ describe("Auth routes", () => {
         id: "user-admin-1",
         email: "admin@example.com",
         displayName: "Admin",
-        role: "admin",
-        isActive: true,
+        status: "active",
+        lastSeenAt: null,
       },
     });
+
+    fakePrisma.user.update.mockResolvedValue({
+      id: "user-admin-1",
+      email: "admin@example.com",
+      displayName: "Admin",
+      status: "active",
+      lastSeenAt: new Date(),
+    });
+
+    fakePrisma.userRoleAssignment.findMany.mockResolvedValue([
+      {
+        id: "ura-1",
+        userId: "user-admin-1",
+        role: "user",
+        assignedBy: null,
+        assignedAt: new Date(),
+        reason: null,
+      },
+      {
+        id: "ura-2",
+        userId: "user-admin-1",
+        role: "admin",
+        assignedBy: null,
+        assignedAt: new Date(),
+        reason: null,
+      },
+    ]);
 
     const response = await request(app)
       .get("/auth/admin-test")
@@ -201,6 +280,6 @@ describe("Auth routes", () => {
 
     expect(response.body.success).toBe(true);
     expect(response.body.data.user.id).toBe("user-admin-1");
-    expect(response.body.data.user.role).toBe("admin");
+    expect(response.body.data.user.roles).toEqual(["user", "admin"]);
   });
 });

@@ -1,6 +1,6 @@
 import { env } from "../../config/env";
 import { createRemoteJWKSet, jwtVerify, type JWTPayload } from "jose";
-import { isSystemRole, type SystemRole } from "../../domain/user/system-role";
+import type {} from "../../domain/user/system-role";
 import type { AuthContext } from "./auth-context";
 
 if (!env.OIDC_ISSUER) {
@@ -39,14 +39,12 @@ async function getRemoteJwks() {
   return jwksResolverPromise;
 }
 
-function extractRoles(claims: JWTPayload): SystemRole[] {
+function extractExternalRoles(claims: JWTPayload): string[] {
   const rawRoles = new Set<string>();
 
   if (Array.isArray(claims.roles)) {
     for (const role of claims.roles) {
-      if (typeof role === "string") {
-        rawRoles.add(role);
-      }
+      if (typeof role === "string") rawRoles.add(role);
     }
   }
 
@@ -54,13 +52,11 @@ function extractRoles(claims: JWTPayload): SystemRole[] {
 
   if (realmAccess && Array.isArray(realmAccess.roles)) {
     for (const role of realmAccess.roles) {
-      if (typeof role === "string") {
-        rawRoles.add(role);
-      }
+      if (typeof role === "string") rawRoles.add(role);
     }
   }
 
-  return [...rawRoles].filter(isSystemRole);
+  return [...rawRoles];
 }
 
 export async function verifyAccessToken(token: string): Promise<AuthContext> {
@@ -83,7 +79,7 @@ export async function verifyAccessToken(token: string): Promise<AuthContext> {
     subject: payload.sub,
     issuer: payload.iss,
     audience: payload.aud ?? audience,
-    roles: extractRoles(payload),
+    externalRoles: extractExternalRoles(payload),
     claims: payload,
     ...(typeof payload.email === "string" ? { email: payload.email } : {}),
     ...(typeof payload.email_verified === "boolean"

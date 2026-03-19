@@ -5,20 +5,45 @@ import { env } from "../src/config/env";
 const adapter = new PrismaPg({ connectionString: env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
 
+async function ensureRoles(
+  userId: string,
+  roles: ("user" | "creator" | "moderator" | "admin" | "super_admin")[],
+) {
+  for (const role of roles) {
+    await prisma.userRoleAssignment.upsert({
+      where: {
+        userId_role: {
+          userId,
+          role,
+        },
+      },
+      update: {},
+      create: {
+        userId,
+        role,
+        reason: "Seed role assignment",
+      },
+    });
+  }
+}
+
 async function main() {
   const adminUser = await prisma.user.upsert({
     where: { email: "admin@outdoor.local" },
     update: {
-      role: "admin",
-      isActive: true,
+      displayName: "Platform Admin",
+      status: "active",
+      lastSeenAt: new Date(),
     },
     create: {
       email: "admin@outdoor.local",
       displayName: "Platform Admin",
-      role: "admin",
-      isActive: true,
+      status: "active",
+      lastSeenAt: new Date(),
     },
   });
+
+  await ensureRoles(adminUser.id, ["user", "admin"]);
 
   await prisma.authIdentity.upsert({
     where: {
@@ -42,19 +67,22 @@ async function main() {
     },
   });
 
-  const ownerUser = await prisma.user.upsert({
+  const creatorUser = await prisma.user.upsert({
     where: { email: "owner@outdoor.local" },
     update: {
-      role: "owner",
-      isActive: true,
+      displayName: "Venue Owner",
+      status: "active",
+      lastSeenAt: new Date(),
     },
     create: {
       email: "owner@outdoor.local",
       displayName: "Venue Owner",
-      role: "owner",
-      isActive: true,
+      status: "active",
+      lastSeenAt: new Date(),
     },
   });
+
+  await ensureRoles(creatorUser.id, ["user", "creator"]);
 
   await prisma.authIdentity.upsert({
     where: {
@@ -69,7 +97,7 @@ async function main() {
       lastLoginAt: new Date(),
     },
     create: {
-      userId: ownerUser.id,
+      userId: creatorUser.id,
       provider: "seed",
       providerSubject: "owner@outdoor.local",
       providerEmail: "owner@outdoor.local",
@@ -81,16 +109,19 @@ async function main() {
   const normalUser = await prisma.user.upsert({
     where: { email: "user@outdoor.local" },
     update: {
-      role: "user",
-      isActive: true,
+      displayName: "Sample User",
+      status: "active",
+      lastSeenAt: new Date(),
     },
     create: {
       email: "user@outdoor.local",
       displayName: "Sample User",
-      role: "user",
-      isActive: true,
+      status: "active",
+      lastSeenAt: new Date(),
     },
   });
+
+  await ensureRoles(normalUser.id, ["user"]);
 
   await prisma.authIdentity.upsert({
     where: {

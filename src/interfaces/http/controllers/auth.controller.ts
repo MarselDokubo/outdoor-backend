@@ -11,8 +11,8 @@ export class AuthController {
         id: currentUser.userId,
         email: currentUser.email,
         displayName: currentUser.displayName,
-        role: currentUser.role,
-        isActive: currentUser.isActive,
+        roles: currentUser.roles,
+        status: currentUser.status,
         auth: {
           subject: currentUser.auth.subject,
           issuer: currentUser.auth.issuer,
@@ -28,7 +28,7 @@ export class AuthController {
       message: "Admin authorization check passed",
       user: {
         id: currentUser.userId,
-        role: currentUser.role,
+        roles: currentUser.roles,
       },
     });
   };

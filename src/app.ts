@@ -7,6 +7,7 @@ import { HealthService } from "./application/services/health.service";
 import { logger } from "./infrastructure/logging/logger";
 import { PrismaAuthIdentityRepository } from "./infrastructure/persistence/prisma/prisma-auth-identity.repository";
 import { PrismaUserRepository } from "./infrastructure/persistence/prisma/prisma-user.repository";
+import { PrismaUserRoleAssignmentRepository } from "./infrastructure/persistence/prisma/prisma-user-role-assignment.repository";
 import { AuthController } from "./interfaces/http/controllers/auth.controller";
 import { HealthController } from "./interfaces/http/controllers/health.controller";
 import { errorHandlerMiddleware } from "./interfaces/http/middlewares/error-handler.middleware";
@@ -37,10 +38,14 @@ export function createApp({ prisma, redis }: AppDependencies): Express {
 
   const userRepository = new PrismaUserRepository(prisma);
   const authIdentityRepository = new PrismaAuthIdentityRepository(prisma);
+  const userRoleAssignmentRepository = new PrismaUserRoleAssignmentRepository(prisma);
+
   const currentUserResolver = new CurrentUserResolverService(
     userRepository,
     authIdentityRepository,
+    userRoleAssignmentRepository,
   );
+
   const notificationQueueService = new NotificationQueueService(notificationQueue);
   const notificationsController = new NotificationsController(notificationQueueService);
   const authController = new AuthController();

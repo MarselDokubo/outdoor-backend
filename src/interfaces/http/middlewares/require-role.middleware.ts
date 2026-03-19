@@ -1,24 +1,15 @@
 import type { NextFunction, Request, Response } from "express";
 import type { SystemRole } from "../../../domain/user/system-role";
-import { ForbiddenError, UnauthorizedError } from "../../../shared/errors/app-error";
+import { ForbiddenError } from "../../../shared/errors/app-error";
+import { getCurrentUser } from "../../../shared/auth/get-current-user";
 
 export function requireRole(...roles: SystemRole[]) {
   return (_req: Request, res: Response, next: NextFunction): void => {
-    const currentUser = res.locals.currentUser;
+    const currentUser = getCurrentUser(res.locals);
 
-    if (!currentUser) {
-      next(new UnauthorizedError("Authentication required"));
-      return;
-    }
+    const hasRole = roles.some((role) => currentUser.roles.includes(role));
 
-    if (!currentUser.isActive) {
-      next(new ForbiddenError("User account is inactive"));
-      return;
-    }
-
-    const allowed = roles.includes(currentUser.role);
-
-    if (!allowed) {
+    if (!hasRole) {
       next(new ForbiddenError("Insufficient permissions"));
       return;
     }

@@ -39,8 +39,8 @@ export class PrismaAuthIdentityRepository implements AuthIdentityRepository {
         id: identity.user.id,
         email: identity.user.email,
         displayName: identity.user.displayName,
-        role: identity.user.role,
-        isActive: identity.user.isActive,
+        status: identity.user.status,
+        lastSeenAt: identity.user.lastSeenAt,
       },
     };
   }
@@ -72,8 +72,8 @@ export class PrismaAuthIdentityRepository implements AuthIdentityRepository {
         id: identity.user.id,
         email: identity.user.email,
         displayName: identity.user.displayName,
-        role: identity.user.role,
-        isActive: identity.user.isActive,
+        status: identity.user.status,
+        lastSeenAt: identity.user.lastSeenAt,
       },
     };
   }
@@ -103,8 +103,8 @@ export class PrismaAuthIdentityRepository implements AuthIdentityRepository {
         id: identity.user.id,
         email: identity.user.email,
         displayName: identity.user.displayName,
-        role: identity.user.role,
-        isActive: identity.user.isActive,
+        status: identity.user.status,
+        lastSeenAt: identity.user.lastSeenAt,
       },
     };
   }
