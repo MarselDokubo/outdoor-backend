@@ -20,11 +20,22 @@
 - longitude
 - createdAt
 
-### User
+### Users
 
 - id
 - type
 - createdAt
+
+## Use Case
+
+## Actors
+
+Guest
+Registered Users
+Creators
+PlaceOwners
+Administrators/Moderators
+AI Moderator
 
 ### Visit
 

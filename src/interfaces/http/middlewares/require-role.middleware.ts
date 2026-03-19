@@ -1,8 +1,8 @@
 import type { NextFunction, Request, Response } from "express";
-import type { UserRole } from "../../../domain/user/user-role";
+import type { SystemRole } from "../../../domain/user/system-role";
 import { ForbiddenError, UnauthorizedError } from "../../../shared/errors/app-error";
 
-export function requireRole(...roles: UserRole[]) {
+export function requireRole(...roles: SystemRole[]) {
   return (_req: Request, res: Response, next: NextFunction): void => {
     const currentUser = res.locals.currentUser;
 

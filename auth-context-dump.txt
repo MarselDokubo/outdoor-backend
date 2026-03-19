@@ -1,0 +1,468 @@
+
+===== prisma/schema.prisma =====
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  user
+  creator
+  owner
+  admin
+}
+
+model User {
+  id          String   @id @default(cuid())
+  email       String?  @unique
+  displayName String?
+  role        UserRole @default(user)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  authIdentities AuthIdentity[]
+
+  @@index([role])
+  @@index([isActive])
+}
+
+model AuthIdentity {
+  id              String    @id @default(cuid())
+  userId          String
+  provider        String
+  providerSubject String
+  providerEmail   String?
+  emailVerified   Boolean?
+  lastLoginAt     DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerSubject])
+  @@index([userId])
+}
+
+===== src/domain/user =====
+
+--- src/domain/user/repositories/auth-identity.repository.ts ---
+import type { UserRecord } from "./user.repository";
+
+export interface AuthIdentityRecord {
+  id: string;
+  userId: string;
+  provider: string;
+  providerSubject: string;
+  providerEmail: string | null;
+  emailVerified: boolean | null;
+  lastLoginAt: Date | null;
+  user: UserRecord;
+}
+
+export interface FindAuthIdentityInput {
+  provider: string;
+  providerSubject: string;
+}
+
+export interface CreateAuthIdentityInput {
+  userId: string;
+  provider: string;
+  providerSubject: string;
+  providerEmail: string | null;
+  emailVerified: boolean | null;
+  lastLoginAt: Date;
+}
+
+export interface UpdateAuthIdentityLoginInput {
+  providerEmail: string | null;
+  emailVerified: boolean | null;
+  lastLoginAt: Date;
+}
+
+export interface AuthIdentityRepository {
+  findByProviderSubject(data: FindAuthIdentityInput): Promise<AuthIdentityRecord | null>;
+
+  create(data: CreateAuthIdentityInput): Promise<AuthIdentityRecord>;
+
+  updateLogin(id: string, data: UpdateAuthIdentityLoginInput): Promise<AuthIdentityRecord>;
+}
+
+--- src/domain/user/repositories/user.repository.ts ---
+import type { UserRole } from "../user-role";
+
+export interface UserRecord {
+  id: string;
+  email: string | null;
+  displayName: string | null;
+  role: UserRole;
+  isActive: boolean;
+}
+
+export interface CreateUserInput {
+  email: string | null;
+  role: UserRole;
+}
+
+export interface UserRepository {
+  create(data: CreateUserInput): Promise<UserRecord>;
+}
+
+--- src/domain/user/user-role.ts ---
+export const USER_ROLES = ["user", "creator", "owner", "admin"] as const;
+
+export type UserRole = (typeof USER_ROLES)[number];
+
+export function isUserRole(value: string): value is UserRole {
+  return USER_ROLES.includes(value as UserRole);
+}
+
+===== src/shared/auth =====
+
+--- src/shared/auth/auth-context.ts ---
+import type { JWTPayload } from "jose";
+import type { UserRole } from "../../domain/user/user-role";
+
+export interface AuthContext {
+  provider: "oidc";
+  subject: string;
+  issuer: string;
+  audience: string | string[];
+  email?: string;
+  emailVerified?: boolean;
+  roles: UserRole[];
+  claims: JWTPayload;
+}
+
+--- src/shared/auth/current-user-context.ts ---
+import type { UserRole } from "../../domain/user/user-role";
+import type { AuthContext } from "./auth-context";
+
+export interface CurrentUserContext {
+  userId: string;
+  email?: string;
+  displayName?: string;
+  role: UserRole;
+  isActive: boolean;
+  auth: AuthContext;
+}
+
+--- src/shared/auth/get-auth.ts ---
+import type { AuthContext } from "./auth-context";
+
+export function getAuthContext(locals: Express.Locals): AuthContext {
+  const auth = locals.auth;
+
+  if (!auth) {
+    throw new Error(
+      "Auth context is missing. Ensure requireAuth ran before accessing auth context.",
+    );
+  }
+
+  return auth;
+}
+
+--- src/shared/auth/get-current-user.ts ---
+import type { CurrentUserContext } from "./current-user-context";
+
+export function getCurrentUser(locals: Express.Locals): CurrentUserContext {
+  const currentUser = locals.currentUser;
+
+  if (!currentUser) {
+    throw new Error(
+      "Current user is missing. Ensure auth and user resolution middleware ran first.",
+    );
+  }
+
+  return currentUser;
+}
+
+--- src/shared/auth/oidc.ts ---
+import { env } from "../../config/env";
+import { createRemoteJWKSet, jwtVerify, type JWTPayload } from "jose";
+import { isUserRole, type UserRole } from "../../domain/user/user-role";
+import type { AuthContext } from "./auth-context";
+
+if (!env.OIDC_ISSUER) {
+  throw new Error("OIDC_ISSUER is not set");
+}
+
+if (!env.OIDC_AUDIENCE) {
+  throw new Error("OIDC_AUDIENCE is not set");
+}
+
+const issuer = env.OIDC_ISSUER;
+const audience = env.OIDC_AUDIENCE;
+
+let jwksResolverPromise: Promise<ReturnType<typeof createRemoteJWKSet>> | undefined;
+
+async function getRemoteJwks() {
+  if (!jwksResolverPromise) {
+    jwksResolverPromise = (async () => {
+      const wellKnownUrl = new URL(`${issuer.replace(/\/$/, "")}/.well-known/openid-configuration`);
+
+      const response = await fetch(wellKnownUrl);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch OIDC discovery document: ${response.status}`);
+      }
+
+      const metadata = (await response.json()) as { jwks_uri?: string };
+
+      if (!metadata.jwks_uri) {
+        throw new Error("OIDC discovery document missing jwks_uri");
+      }
+
+      return createRemoteJWKSet(new URL(metadata.jwks_uri));
+    })();
+  }
+
+  return jwksResolverPromise;
+}
+
+function extractRoles(claims: JWTPayload): UserRole[] {
+  const rawRoles = new Set<string>();
+
+  if (Array.isArray(claims.roles)) {
+    for (const role of claims.roles) {
+      if (typeof role === "string") {
+        rawRoles.add(role);
+      }
+    }
+  }
+
+  const realmAccess = claims.realm_access as { roles?: unknown[] } | undefined;
+
+  if (realmAccess && Array.isArray(realmAccess.roles)) {
+    for (const role of realmAccess.roles) {
+      if (typeof role === "string") {
+        rawRoles.add(role);
+      }
+    }
+  }
+
+  return [...rawRoles].filter(isUserRole);
+}
+
+export async function verifyAccessToken(token: string): Promise<AuthContext> {
+  const jwks = await getRemoteJwks();
+
+  const { payload } = await jwtVerify(token, jwks, {
+    issuer,
+    audience,
+  });
+
+  if (typeof payload.sub !== "string" || !payload.sub) {
+    throw new Error("Token subject (sub) is missing");
+  }
+
+  if (typeof payload.iss !== "string" || !payload.iss) {
+    throw new Error("Token issuer (iss) is missing");
+  }
+  return {
+    provider: "oidc",
+    subject: payload.sub,
+    issuer: payload.iss,
+    audience: payload.aud ?? audience,
+    roles: extractRoles(payload),
+    claims: payload,
+    ...(typeof payload.email === "string" ? { email: payload.email } : {}),
+    ...(typeof payload.email_verified === "boolean"
+      ? { emailVerified: payload.email_verified }
+      : {}),
+  };
+}
+
+===== src/interfaces/http/controllers/auth.controller.ts =====
+import type { Request, Response } from "express";
+import { getCurrentUser } from "../../../shared/auth/get-current-user";
+import { sendSuccess } from "../../../shared/http/api-response";
+
+export class AuthController {
+  me = (_req: Request, res: Response): void => {
+    const currentUser = getCurrentUser(res.locals);
+
+    sendSuccess(res, {
+      user: {
+        id: currentUser.userId,
+        email: currentUser.email,
+        displayName: currentUser.displayName,
+        role: currentUser.role,
+        isActive: currentUser.isActive,
+        auth: {
+          subject: currentUser.auth.subject,
+          issuer: currentUser.auth.issuer,
+        },
+      },
+    });
+  };
+
+  adminTest = (_req: Request, res: Response): void => {
+    const currentUser = getCurrentUser(res.locals);
+
+    sendSuccess(res, {
+      message: "Admin authorization check passed",
+      user: {
+        id: currentUser.userId,
+        role: currentUser.role,
+      },
+    });
+  };
+}
+
+===== src/interfaces/http/middlewares/*auth* =====
+
+--- src/interfaces/http/middlewares/auth.middleware.ts ---
+import type { NextFunction, Request, Response } from "express";
+import { logger } from "../../../infrastructure/logging/logger";
+import { UnauthorizedError } from "../../../shared/errors/app-error";
+import { verifyAccessToken } from "../../../shared/auth/oidc";
+import { env } from "../../../config/env";
+
+function getBearerToken(req: Request): string | null {
+  const authorization = req.header("authorization");
+
+  if (!authorization) {
+    return null;
+  }
+
+  const [scheme, token] = authorization.split(" ");
+
+  if (!scheme || !token) {
+    return null;
+  }
+
+  if (scheme.toLowerCase() !== "bearer") {
+    return null;
+  }
+
+  return token;
+}
+
+export async function attachAuthContext(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  const token = getBearerToken(req);
+
+  if (!token) {
+    next();
+    return;
+  }
+
+  try {
+    const auth = await verifyAccessToken(token);
+    res.locals.auth = auth;
+    next();
+  } catch (error) {
+    const requestLogger = res.locals.logger ?? logger;
+
+    requestLogger.error(
+      env.EXPOSE_ERROR_DETAILS
+        ? {
+            err: error,
+            issuer: env.OIDC_ISSUER,
+            audience: env.OIDC_AUDIENCE,
+          }
+        : {
+            issuer: env.OIDC_ISSUER,
+            audience: env.OIDC_AUDIENCE,
+          },
+      "oidc access token verification failed",
+    );
+
+    next(new UnauthorizedError("Invalid or expired access token"));
+  }
+}
+
+--- src/interfaces/http/middlewares/require-auth.middleware.ts ---
+import type { NextFunction, Request, Response } from "express";
+import { UnauthorizedError } from "../../../shared/errors/app-error";
+
+export function requireAuth(_req: Request, res: Response, next: NextFunction): void {
+  if (!res.locals.auth) {
+    next(new UnauthorizedError("Authentication required"));
+    return;
+  }
+
+  next();
+}
+
+===== src/application/services/current-user-resolver.service.ts =====
+import type { AuthIdentityRepository } from "../../domain/user/repositories/auth-identity.repository";
+import type { UserRepository } from "../../domain/user/repositories/user.repository";
+import type { AuthContext } from "../../shared/auth/auth-context";
+import type { CurrentUserContext } from "../../shared/auth/current-user-context";
+
+export class CurrentUserResolverService {
+  constructor(
+    private readonly userRepository: UserRepository,
+    private readonly authIdentityRepository: AuthIdentityRepository,
+  ) {}
+
+  async resolve(auth: AuthContext): Promise<CurrentUserContext> {
+    const provider = auth.issuer;
+    const providerSubject = auth.subject;
+
+    const existingIdentity = await this.authIdentityRepository.findByProviderSubject({
+      provider,
+      providerSubject,
+    });
+
+    if (!existingIdentity) {
+      const user = await this.userRepository.create({
+        email: auth.email ?? null,
+        role: "user",
+      });
+
+      const identity = await this.authIdentityRepository.create({
+        userId: user.id,
+        provider,
+        providerSubject,
+        providerEmail: auth.email ?? null,
+        emailVerified: auth.emailVerified ?? null,
+        lastLoginAt: new Date(),
+      });
+
+      return this.toCurrentUserContext(identity.user, auth);
+    }
+
+    const updatedIdentity = await this.authIdentityRepository.updateLogin(existingIdentity.id, {
+      providerEmail: auth.email ?? null,
+      emailVerified: auth.emailVerified ?? null,
+      lastLoginAt: new Date(),
+    });
+
+    return this.toCurrentUserContext(updatedIdentity.user, auth);
+  }
+
+  private toCurrentUserContext(
+    user: {
+      id: string;
+      email: string | null;
+      displayName: string | null;
+      role: "user" | "creator" | "owner" | "admin";
+      isActive: boolean;
+    },
+    auth: AuthContext,
+  ): CurrentUserContext {
+    return {
+      userId: user.id,
+      role: user.role,
+      isActive: user.isActive,
+      auth,
+      ...(user.email ? { email: user.email } : {}),
+      ...(user.displayName ? { displayName: user.displayName } : {}),
+    };
+  }
+}

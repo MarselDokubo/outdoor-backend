@@ -13,21 +13,22 @@ datasource db {
   provider = "postgresql"
 }
 
-enum UserRole {
+enum SystemRole {
   user
   creator
-  owner
+  moderator
   admin
+  super_admin
 }
 
 model User {
-  id          String   @id @default(cuid())
-  email       String?  @unique
+  id          String     @id @default(cuid())
+  email       String?    @unique
   displayName String?
-  role        UserRole @default(user)
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  role        SystemRole @default(user)
+  isActive    Boolean    @default(true)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
 
   authIdentities AuthIdentity[]
 

@@ -1,6 +1,6 @@
 import { env } from "../../config/env";
 import { createRemoteJWKSet, jwtVerify, type JWTPayload } from "jose";
-import { isUserRole, type UserRole } from "../../domain/user/user-role";
+import { isSystemRole, type SystemRole } from "../../domain/user/system-role";
 import type { AuthContext } from "./auth-context";
 
 if (!env.OIDC_ISSUER) {
@@ -39,7 +39,7 @@ async function getRemoteJwks() {
   return jwksResolverPromise;
 }
 
-function extractRoles(claims: JWTPayload): UserRole[] {
+function extractRoles(claims: JWTPayload): SystemRole[] {
   const rawRoles = new Set<string>();
 
   if (Array.isArray(claims.roles)) {
@@ -60,7 +60,7 @@ function extractRoles(claims: JWTPayload): UserRole[] {
     }
   }
 
-  return [...rawRoles].filter(isUserRole);
+  return [...rawRoles].filter(isSystemRole);
 }
 
 export async function verifyAccessToken(token: string): Promise<AuthContext> {

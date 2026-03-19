@@ -1,5 +1,6 @@
 import type { AuthIdentityRepository } from "../../domain/user/repositories/auth-identity.repository";
 import type { UserRepository } from "../../domain/user/repositories/user.repository";
+import type { SystemRole } from "../../domain/user/system-role";
 import type { AuthContext } from "../../shared/auth/auth-context";
 import type { CurrentUserContext } from "../../shared/auth/current-user-context";
 
@@ -50,7 +51,7 @@ export class CurrentUserResolverService {
       id: string;
       email: string | null;
       displayName: string | null;
-      role: "user" | "creator" | "owner" | "admin";
+      role: SystemRole;
       isActive: boolean;
     },
     auth: AuthContext,

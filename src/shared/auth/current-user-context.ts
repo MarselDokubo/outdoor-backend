@@ -1,11 +1,11 @@
-import type { UserRole } from "../../domain/user/user-role";
+import type { SystemRole } from "../../domain/user/system-role";
 import type { AuthContext } from "./auth-context";
 
 export interface CurrentUserContext {
   userId: string;
   email?: string;
   displayName?: string;
-  role: UserRole;
+  role: SystemRole;
   isActive: boolean;
   auth: AuthContext;
 }

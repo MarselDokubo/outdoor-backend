@@ -1,16 +1,16 @@
-import type { UserRole } from "../user-role";
+import type { SystemRole } from "../system-role";
 
 export interface UserRecord {
   id: string;
   email: string | null;
   displayName: string | null;
-  role: UserRole;
+  role: SystemRole;
   isActive: boolean;
 }
 
 export interface CreateUserInput {
   email: string | null;
-  role: UserRole;
+  role: SystemRole;
 }
 
 export interface UserRepository {
