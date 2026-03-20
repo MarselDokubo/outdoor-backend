@@ -42,4 +42,30 @@ describe("Geo routes", () => {
 
     expect(response.body.data.result.city.citySlug).toBe("port-harcourt");
   });
+  it("POST /geo/validate-point returns 400 for invalid coordinates", async () => {
+    const response = await request(app)
+      .post("/geo/validate-point")
+      .send({ latitude: "abc", longitude: 7.0498 })
+      .expect(400);
+
+    expect(response.body.success).toBe(false);
+    expect(response.body.error.code).toBe("BAD_REQUEST");
+  });
+
+  it("POST /geo/geocode returns 400 for empty query", async () => {
+    const response = await request(app).post("/geo/geocode").send({ query: "   " }).expect(400);
+
+    expect(response.body.success).toBe(false);
+    expect(response.body.error.code).toBe("BAD_REQUEST");
+  });
+
+  it("POST /geo/reverse-geocode returns 400 for invalid latitude range", async () => {
+    const response = await request(app)
+      .post("/geo/reverse-geocode")
+      .send({ latitude: 500, longitude: 7.0498 })
+      .expect(400);
+
+    expect(response.body.success).toBe(false);
+    expect(response.body.error.code).toBe("BAD_REQUEST");
+  });
 });
