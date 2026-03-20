@@ -4,22 +4,34 @@ import type { PrismaClient } from "./generated/prisma/client";
 
 import { CurrentUserResolverService } from "./application/services/current-user-resolver.service";
 import { HealthService } from "./application/services/health.service";
+import { NotificationQueueService } from "./application/services/notification-queue.service";
+
+import { ValidatePointUseCase } from "./application/geo/use-cases/validate-point.use-case";
+import { ReverseGeocodePointUseCase } from "./application/geo/use-cases/reverse-geocode-point.use-case";
+import { GeocodeAddressUseCase } from "./application/geo/use-cases/geocode-address.use-case";
+
 import { logger } from "./infrastructure/logging/logger";
 import { PrismaAuthIdentityRepository } from "./infrastructure/persistence/prisma/prisma-auth-identity.repository";
 import { PrismaUserRepository } from "./infrastructure/persistence/prisma/prisma-user.repository";
 import { PrismaUserRoleAssignmentRepository } from "./infrastructure/persistence/prisma/prisma-user-role-assignment.repository";
+import { notificationQueue } from "./infrastructure/queues/queues";
+import { StaticGeocodingProvider } from "./infrastructure/geo/providers/static-geocoding.provider";
+
 import { AuthController } from "./interfaces/http/controllers/auth.controller";
 import { HealthController } from "./interfaces/http/controllers/health.controller";
+import { NotificationsController } from "./interfaces/http/controllers/notifications.controller";
+import { GeoController } from "./interfaces/http/controllers/geo.controller";
+
 import { errorHandlerMiddleware } from "./interfaces/http/middlewares/error-handler.middleware";
 import { requestLoggingMiddleware } from "./interfaces/http/middlewares/request-logging.middleware";
+
 import { createAuthRoutes } from "./interfaces/http/routes/auth.route";
 import { createHealthRoutes } from "./interfaces/http/routes/health.route";
+import { createNotificationsRoutes } from "./interfaces/http/routes/notifications.route";
+import { createGeoRoutes } from "./interfaces/http/routes/geo.route";
+
 import { NotFoundError } from "./shared/errors/app-error";
 import { sendSuccess } from "./shared/http/api-response";
-import { NotificationQueueService } from "./application/services/notification-queue.service";
-import { notificationQueue } from "./infrastructure/queues/queues";
-import { NotificationsController } from "./interfaces/http/controllers/notifications.controller";
-import { createNotificationsRoutes } from "./interfaces/http/routes/notifications.route";
 
 interface AppDependencies {
   prisma: PrismaClient;
@@ -33,9 +45,11 @@ export function createApp({ prisma, redis }: AppDependencies): Express {
   app.use(express.urlencoded({ extended: true }));
   app.use(requestLoggingMiddleware);
 
+  // Core services/controllers
   const healthService = new HealthService(prisma, redis);
   const healthController = new HealthController(healthService);
 
+  // Identity and access
   const userRepository = new PrismaUserRepository(prisma);
   const authIdentityRepository = new PrismaAuthIdentityRepository(prisma);
   const userRoleAssignmentRepository = new PrismaUserRoleAssignmentRepository(prisma);
@@ -46,9 +60,23 @@ export function createApp({ prisma, redis }: AppDependencies): Express {
     userRoleAssignmentRepository,
   );
 
+  const authController = new AuthController();
+
+  // Geo foundation
+  const geocodingProvider = new StaticGeocodingProvider();
+
+  const validatePointUseCase = new ValidatePointUseCase();
+  const reverseGeocodePointUseCase = new ReverseGeocodePointUseCase(geocodingProvider);
+  const geocodeAddressUseCase = new GeocodeAddressUseCase(geocodingProvider);
+  const geoController = new GeoController(
+    validatePointUseCase,
+    geocodeAddressUseCase,
+    reverseGeocodePointUseCase,
+  );
+
+  // Notifications
   const notificationQueueService = new NotificationQueueService(notificationQueue);
   const notificationsController = new NotificationsController(notificationQueueService);
-  const authController = new AuthController();
 
   app.get("/", (_req: Request, res: Response) => {
     return sendSuccess(res, {
@@ -58,7 +86,9 @@ export function createApp({ prisma, redis }: AppDependencies): Express {
 
   app.use("/health", createHealthRoutes(healthController));
   app.use("/auth", createAuthRoutes(authController, currentUserResolver));
+  app.use("/geo", createGeoRoutes(geoController));
   app.use("/notifications", createNotificationsRoutes(notificationsController));
+
   app.use((req: Request, res: Response, next: NextFunction) => {
     const requestLogger = res.locals.logger ?? logger;
 
