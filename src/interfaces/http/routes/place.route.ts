@@ -19,7 +19,9 @@ import {
 
 export interface CreatePlaceRouteDeps {
   prisma: PlacesPrismaClient;
+  attachAuthContext: RequestHandler;
   requireAuth: RequestHandler;
+  resolveCurrentUser: RequestHandler;
   optionalAuth?: RequestHandler;
 }
 
@@ -33,7 +35,7 @@ export function createPlaceRoute(deps: CreatePlaceRouteDeps): Router {
     res.json({ items: PLACE_CATEGORY_CATALOG });
   });
 
-  router.get("/places/search", optionalAuth, async (req, res) => {
+  router.get("/places/search", deps.attachAuthContext, optionalAuth, async (req, res) => {
     try {
       const query = searchPlacesQuerySchema.parse(req.query);
       const result = await handlers.searchPlaces.execute({
@@ -49,7 +51,7 @@ export function createPlaceRoute(deps: CreatePlaceRouteDeps): Router {
     }
   });
 
-  router.get("/places/nearby", optionalAuth, async (req, res) => {
+  router.get("/places/nearby", deps.attachAuthContext, optionalAuth, async (req, res) => {
     try {
       const query = nearbyPlacesQuerySchema.parse(req.query);
       const result = await handlers.findNearbyPlaces.execute({
@@ -66,7 +68,7 @@ export function createPlaceRoute(deps: CreatePlaceRouteDeps): Router {
     }
   });
 
-  router.get("/places/tagging", optionalAuth, async (req, res) => {
+  router.get("/places/tagging", deps.attachAuthContext, optionalAuth, async (req, res) => {
     try {
       const query = taggingPlacesQuerySchema.parse(req.query);
       const result = await handlers.searchPlacesForTagging.execute({
@@ -80,7 +82,7 @@ export function createPlaceRoute(deps: CreatePlaceRouteDeps): Router {
     }
   });
 
-  router.get("/places/slug/:slug", optionalAuth, async (req, res) => {
+  router.get("/places/slug/:slug", deps.attachAuthContext, optionalAuth, async (req, res) => {
     try {
       const params = slugParamSchema.parse(req.params);
       const result = await handlers.getPlaceDetails.execute({
@@ -93,7 +95,7 @@ export function createPlaceRoute(deps: CreatePlaceRouteDeps): Router {
     }
   });
 
-  router.get("/places/:placeId", optionalAuth, async (req, res) => {
+  router.get("/places/:placeId", deps.attachAuthContext, optionalAuth, async (req, res) => {
     try {
       const params = placeIdParamSchema.parse(req.params);
       const result = await handlers.getPlaceDetails.execute({
@@ -106,128 +108,182 @@ export function createPlaceRoute(deps: CreatePlaceRouteDeps): Router {
     }
   });
 
-  router.post("/places", deps.requireAuth, async (req, res) => {
-    try {
-      const body = createPlaceBodySchema.parse(req.body);
-      const result = await handlers.createPlace.execute({
-        actor: controller.requireActor(req),
-        ...body,
-      });
-      res.status(201).json(result);
-    } catch (error) {
-      controller.sendError(res, error);
-    }
-  });
+  router.post(
+    "/places",
+    deps.attachAuthContext,
+    deps.requireAuth,
+    deps.resolveCurrentUser,
+    async (req, res) => {
+      try {
+        const body = createPlaceBodySchema.parse(req.body);
+        const result = await handlers.createPlace.execute({
+          actor: controller.requireActor(req),
+          ...body,
+        });
+        res.status(201).json(result);
+      } catch (error) {
+        controller.sendError(res, error);
+      }
+    },
+  );
 
-  router.patch("/places/:placeId", deps.requireAuth, async (req, res) => {
-    try {
-      const params = placeIdParamSchema.parse(req.params);
-      const body = updatePlaceBodySchema.parse(req.body);
-      const result = await handlers.updatePlace.execute({
-        actor: controller.requireActor(req),
-        placeId: params.placeId,
-        ...body,
-      });
-      res.json(result);
-    } catch (error) {
-      controller.sendError(res, error);
-    }
-  });
+  router.patch(
+    "/places/:placeId",
+    deps.attachAuthContext,
+    deps.requireAuth,
+    deps.resolveCurrentUser,
+    async (req, res) => {
+      try {
+        const params = placeIdParamSchema.parse(req.params);
+        const body = updatePlaceBodySchema.parse(req.body);
+        const result = await handlers.updatePlace.execute({
+          actor: controller.requireActor(req),
+          placeId: params.placeId,
+          ...body,
+        });
+        res.json(result);
+      } catch (error) {
+        controller.sendError(res, error);
+      }
+    },
+  );
 
-  router.post("/places/:placeId/publish", deps.requireAuth, async (req, res) => {
-    try {
-      const params = placeIdParamSchema.parse(req.params);
-      const result = await handlers.publishPlace.execute({
-        actor: controller.requireActor(req),
-        placeId: params.placeId,
-      });
-      res.json(result);
-    } catch (error) {
-      controller.sendError(res, error);
-    }
-  });
+  router.post(
+    "/places/:placeId/publish",
+    deps.attachAuthContext,
+    deps.requireAuth,
+    deps.resolveCurrentUser,
+    async (req, res) => {
+      try {
+        const params = placeIdParamSchema.parse(req.params);
+        const result = await handlers.publishPlace.execute({
+          actor: controller.requireActor(req),
+          placeId: params.placeId,
+        });
+        res.json(result);
+      } catch (error) {
+        controller.sendError(res, error);
+      }
+    },
+  );
 
-  router.post("/places/:placeId/archive", deps.requireAuth, async (req, res) => {
-    try {
-      const params = placeIdParamSchema.parse(req.params);
-      const result = await handlers.archivePlace.execute({
-        actor: controller.requireActor(req),
-        placeId: params.placeId,
-      });
-      res.json(result);
-    } catch (error) {
-      controller.sendError(res, error);
-    }
-  });
+  router.post(
+    "/places/:placeId/archive",
+    deps.attachAuthContext,
+    deps.requireAuth,
+    deps.resolveCurrentUser,
+    async (req, res) => {
+      try {
+        const params = placeIdParamSchema.parse(req.params);
+        const result = await handlers.archivePlace.execute({
+          actor: controller.requireActor(req),
+          placeId: params.placeId,
+        });
+        res.json(result);
+      } catch (error) {
+        controller.sendError(res, error);
+      }
+    },
+  );
 
-  router.patch("/places/:placeId/official-profile", deps.requireAuth, async (req, res) => {
-    try {
-      const params = placeIdParamSchema.parse(req.params);
-      const body = updateOfficialProfileBodySchema.parse(req.body);
-      const result = await handlers.updateOfficialProfile.execute({
-        actor: controller.requireActor(req),
-        placeId: params.placeId,
-        ...body,
-      });
-      res.json(result);
-    } catch (error) {
-      controller.sendError(res, error);
-    }
-  });
+  router.patch(
+    "/places/:placeId/official-profile",
+    deps.attachAuthContext,
+    deps.requireAuth,
+    deps.resolveCurrentUser,
+    async (req, res) => {
+      try {
+        const params = placeIdParamSchema.parse(req.params);
+        const body = updateOfficialProfileBodySchema.parse(req.body);
+        const result = await handlers.updateOfficialProfile.execute({
+          actor: controller.requireActor(req),
+          placeId: params.placeId,
+          ...body,
+        });
+        res.json(result);
+      } catch (error) {
+        controller.sendError(res, error);
+      }
+    },
+  );
 
-  router.post("/places/:placeId/claims", deps.requireAuth, async (req, res) => {
-    try {
-      const params = placeIdParamSchema.parse(req.params);
-      const body = submitClaimBodySchema.parse(req.body);
-      const result = await handlers.submitClaim.execute({
-        actor: controller.requireActor(req),
-        placeId: params.placeId,
-        proofReferences: body.proofReferences,
-      });
-      res.status(201).json(result);
-    } catch (error) {
-      controller.sendError(res, error);
-    }
-  });
+  router.post(
+    "/places/:placeId/claims",
+    deps.attachAuthContext,
+    deps.requireAuth,
+    deps.resolveCurrentUser,
+    async (req, res) => {
+      try {
+        const params = placeIdParamSchema.parse(req.params);
+        const body = submitClaimBodySchema.parse(req.body);
+        const result = await handlers.submitClaim.execute({
+          actor: controller.requireActor(req),
+          placeId: params.placeId,
+          proofReferences: body.proofReferences,
+        });
+        res.status(201).json(result);
+      } catch (error) {
+        controller.sendError(res, error);
+      }
+    },
+  );
 
-  router.post("/place-claims/:claimId/review", deps.requireAuth, async (req, res) => {
-    try {
-      const params = claimIdParamSchema.parse(req.params);
-      const body = reviewClaimBodySchema.parse(req.body);
-      const result = await handlers.reviewClaim.execute({
-        actor: controller.requireActor(req),
-        claimId: params.claimId,
-        decision: body.decision,
-        reviewNotes: body.reviewNotes,
-        roleOnApproval: body.roleOnApproval,
-      });
-      res.json(result);
-    } catch (error) {
-      controller.sendError(res, error);
-    }
-  });
+  router.post(
+    "/place-claims/:claimId/review",
+    deps.attachAuthContext,
+    deps.requireAuth,
+    deps.resolveCurrentUser,
+    async (req, res) => {
+      try {
+        const params = claimIdParamSchema.parse(req.params);
+        const body = reviewClaimBodySchema.parse(req.body);
+        const result = await handlers.reviewClaim.execute({
+          actor: controller.requireActor(req),
+          claimId: params.claimId,
+          decision: body.decision,
+          reviewNotes: body.reviewNotes,
+          roleOnApproval: body.roleOnApproval,
+        });
+        res.json(result);
+      } catch (error) {
+        controller.sendError(res, error);
+      }
+    },
+  );
 
-  router.get("/place-claims/pending", deps.requireAuth, async (req, res) => {
-    try {
-      const result = await handlers.listPendingPlaceClaims.execute({
-        actor: controller.requireActor(req),
-      });
-      res.json({ items: result });
-    } catch (error) {
-      controller.sendError(res, error);
-    }
-  });
+  router.get(
+    "/place-claims/pending",
+    deps.attachAuthContext,
+    deps.requireAuth,
+    deps.resolveCurrentUser,
+    async (req, res) => {
+      try {
+        const result = await handlers.listPendingPlaceClaims.execute({
+          actor: controller.requireActor(req),
+        });
+        res.json({ items: result });
+      } catch (error) {
+        controller.sendError(res, error);
+      }
+    },
+  );
 
-  router.get("/me/places", deps.requireAuth, async (req, res) => {
-    try {
-      const result = await handlers.listMyOwnedPlaces.execute({
-        actor: controller.requireActor(req),
-      });
-      res.json({ items: result });
-    } catch (error) {
-      controller.sendError(res, error);
-    }
-  });
+  router.get(
+    "/me/places",
+    deps.attachAuthContext,
+    deps.requireAuth,
+    deps.resolveCurrentUser,
+    async (req, res) => {
+      try {
+        const result = await handlers.listMyOwnedPlaces.execute({
+          actor: controller.requireActor(req),
+        });
+        res.json({ items: result });
+      } catch (error) {
+        controller.sendError(res, error);
+      }
+    },
+  );
 
   return router;
 }

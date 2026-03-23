@@ -22,19 +22,23 @@ import { HealthController } from "./interfaces/http/controllers/health.controlle
 import { NotificationsController } from "./interfaces/http/controllers/notifications.controller";
 import { GeoController } from "./interfaces/http/controllers/geo.controller";
 
+import { attachAuthContext } from "./interfaces/http/middlewares/auth.middleware";
 import { errorHandlerMiddleware } from "./interfaces/http/middlewares/error-handler.middleware";
 import { requestLoggingMiddleware } from "./interfaces/http/middlewares/request-logging.middleware";
+import { requireAuth } from "./interfaces/http/middlewares/require-auth.middleware";
+import {
+  resolveCurrentUser,
+  resolveOptionalCurrentUser,
+} from "./interfaces/http/middlewares/resolve-current-user.middleware";
 
 import { createAuthRoutes } from "./interfaces/http/routes/auth.route";
 import { createHealthRoutes } from "./interfaces/http/routes/health.route";
 import { createNotificationsRoutes } from "./interfaces/http/routes/notifications.route";
 import { createGeoRoutes } from "./interfaces/http/routes/geo.route";
+import { createPlaceRoute } from "./interfaces/http/routes/place.route";
 
 import { NotFoundError } from "./shared/errors/app-error";
 import { sendSuccess } from "./shared/http/api-response";
-import { createPlaceRoute } from "./interfaces/http/routes/place.route";
-import { requireAuth } from "./interfaces/http/middlewares/require-auth.middleware";
-import { resolveCurrentUser } from "./interfaces/http/middlewares/resolve-current-user.middleware";
 
 interface AppDependencies {
   prisma: PrismaClient;
@@ -62,8 +66,11 @@ export function createApp({ prisma, redis }: AppDependencies): Express {
     authIdentityRepository,
     userRoleAssignmentRepository,
   );
-  const optionalAuth = resolveCurrentUser(currentUserResolver);
+
+  const optionalAuth = resolveOptionalCurrentUser(currentUserResolver);
   const requireAuthForPlaces = requireAuth;
+  const resolveRequiredCurrentUser = resolveCurrentUser(currentUserResolver);
+
   const authController = new AuthController();
 
   // Geo foundation
@@ -92,7 +99,17 @@ export function createApp({ prisma, redis }: AppDependencies): Express {
   app.use("/auth", createAuthRoutes(authController, currentUserResolver));
   app.use("/geo", createGeoRoutes(geoController));
   app.use("/notifications", createNotificationsRoutes(notificationsController));
-  app.use(createPlaceRoute({ prisma, requireAuth: requireAuthForPlaces, optionalAuth }));
+
+  app.use(
+    createPlaceRoute({
+      prisma,
+      attachAuthContext,
+      requireAuth: requireAuthForPlaces,
+      resolveCurrentUser: resolveRequiredCurrentUser,
+      optionalAuth,
+    }),
+  );
+
   app.use((req: Request, res: Response, next: NextFunction) => {
     const requestLogger = res.locals.logger ?? logger;
 
