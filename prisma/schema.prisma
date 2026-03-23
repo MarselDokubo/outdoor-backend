@@ -22,15 +22,15 @@ enum UserStatus {
 }
 
 model User {
-  id          String     @id @default(cuid())
-  email       String?    @unique
+  id          String  @id @default(cuid())
+  email       String? @unique
   displayName String?
 
-  status      UserStatus @default(active)
-  lastSeenAt  DateTime?
+  status     UserStatus @default(active)
+  lastSeenAt DateTime?
 
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   authIdentities  AuthIdentity[]
   roleAssignments UserRoleAssignment[]
@@ -68,4 +68,118 @@ model UserRoleAssignment {
   @@unique([userId, role])
   @@index([userId])
   @@index([role])
+}
+
+enum PlacePublicationStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum PlaceVisibility {
+  PUBLIC
+  UNLISTED
+  PRIVATE
+}
+
+enum PlaceSourceType {
+  USER_SUBMITTED
+  CURATED
+  IMPORTED
+}
+
+enum PlaceClaimStatus {
+  PENDING
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+  WITHDRAWN
+}
+
+enum PlaceOwnerRole {
+  OWNER
+  MANAGER
+}
+
+enum PlaceOwnerMembershipStatus {
+  ACTIVE
+  REVOKED
+}
+
+model Place {
+  id                String                 @id
+  slug              String                 @unique
+  name              String
+  categoryCode      String
+  shortDescription  String?
+  fullDescription   String?
+  phone             String?
+  email             String?
+  website           String?
+  latitude          Float
+  longitude         Float
+  addressLine1      String?
+  addressLine2      String?
+  area              String?
+  city              String?
+  state             String?
+  postalCode        String?
+  countryCode       String
+  formattedAddress  String?
+  publicationStatus PlacePublicationStatus @default(DRAFT)
+  visibility        PlaceVisibility        @default(PRIVATE)
+  sourceType        PlaceSourceType        @default(USER_SUBMITTED)
+  officialTagline   String?
+  officialSummary   String?
+  isOwnerManaged    Boolean                @default(false)
+  isVerified        Boolean                @default(false)
+  createdByUserId   String
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
+  archivedAt        DateTime?
+
+  claims           PlaceClaim[]
+  ownerMemberships PlaceOwnerMembership[]
+
+  @@index([publicationStatus, visibility])
+  @@index([categoryCode])
+  @@index([latitude, longitude])
+  @@index([name])
+  @@index([city])
+  @@index([area])
+}
+
+model PlaceClaim {
+  id               String           @id
+  placeId          String
+  claimantUserId   String
+  proofReferences  Json
+  status           PlaceClaimStatus @default(PENDING)
+  submittedAt      DateTime         @default(now())
+  reviewedAt       DateTime?
+  reviewedByUserId String?
+  reviewNotes      String?
+  updatedAt        DateTime         @updatedAt
+
+  place Place @relation(fields: [placeId], references: [id], onDelete: Cascade)
+
+  @@index([placeId, status])
+  @@index([claimantUserId, status])
+  @@index([submittedAt])
+}
+
+model PlaceOwnerMembership {
+  id              String                     @id
+  placeId         String
+  userId          String
+  role            PlaceOwnerRole
+  status          PlaceOwnerMembershipStatus @default(ACTIVE)
+  grantedAt       DateTime                   @default(now())
+  grantedByUserId String
+
+  place Place @relation(fields: [placeId], references: [id], onDelete: Cascade)
+
+  @@unique([placeId, userId])
+  @@index([userId, status])
+  @@index([placeId, status])
 }

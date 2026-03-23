@@ -32,6 +32,9 @@ import { createGeoRoutes } from "./interfaces/http/routes/geo.route";
 
 import { NotFoundError } from "./shared/errors/app-error";
 import { sendSuccess } from "./shared/http/api-response";
+import { createPlaceRoute } from "./interfaces/http/routes/place.route";
+import { requireAuth } from "./interfaces/http/middlewares/require-auth.middleware";
+import { resolveCurrentUser } from "./interfaces/http/middlewares/resolve-current-user.middleware";
 
 interface AppDependencies {
   prisma: PrismaClient;
@@ -59,7 +62,8 @@ export function createApp({ prisma, redis }: AppDependencies): Express {
     authIdentityRepository,
     userRoleAssignmentRepository,
   );
-
+  const optionalAuth = resolveCurrentUser(currentUserResolver);
+  const requireAuthForPlaces = requireAuth;
   const authController = new AuthController();
 
   // Geo foundation
@@ -88,7 +92,7 @@ export function createApp({ prisma, redis }: AppDependencies): Express {
   app.use("/auth", createAuthRoutes(authController, currentUserResolver));
   app.use("/geo", createGeoRoutes(geoController));
   app.use("/notifications", createNotificationsRoutes(notificationsController));
-
+  app.use(createPlaceRoute({ prisma, requireAuth: requireAuthForPlaces, optionalAuth }));
   app.use((req: Request, res: Response, next: NextFunction) => {
     const requestLogger = res.locals.logger ?? logger;
 
