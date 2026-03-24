@@ -183,3 +183,69 @@ model PlaceOwnerMembership {
   @@index([userId, status])
   @@index([placeId, status])
 }
+
+enum MediaKind {
+  IMAGE
+  VIDEO
+}
+
+enum MediaProcessingStatus {
+  UPLOADED
+  READY
+  FAILED
+  DELETED
+}
+
+enum MediaAttachmentOwnerType {
+  PLACE
+  POST
+  EVENT
+}
+
+enum MediaAttachmentRole {
+  PRIMARY
+  GALLERY
+  CONTENT
+}
+
+model MediaAsset {
+  id               String                @id
+  uploaderUserId   String
+  kind             MediaKind
+  mimeType         String
+  originalFilename String
+  storageKey       String                @unique
+  sizeBytes        Int
+  checksumSha256   String
+  width            Int?
+  height           Int?
+  durationSeconds  Int?
+  processingStatus MediaProcessingStatus
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+  deletedAt        DateTime?
+
+  attachments MediaAttachment[]
+
+  @@index([uploaderUserId])
+  @@index([processingStatus])
+  @@index([deletedAt])
+}
+
+model MediaAttachment {
+  id               String                   @id
+  mediaAssetId     String
+  ownerType        MediaAttachmentOwnerType
+  ownerId          String
+  role             MediaAttachmentRole
+  sortOrder        Int                      @default(0)
+  attachedByUserId String
+  createdAt        DateTime                 @default(now())
+  detachedAt       DateTime?
+
+  mediaAsset MediaAsset @relation(fields: [mediaAssetId], references: [id], onDelete: Restrict)
+
+  @@index([ownerType, ownerId, detachedAt])
+  @@index([mediaAssetId, detachedAt])
+  @@index([attachedByUserId])
+}

@@ -36,9 +36,11 @@ import { createHealthRoutes } from "./interfaces/http/routes/health.route";
 import { createNotificationsRoutes } from "./interfaces/http/routes/notifications.route";
 import { createGeoRoutes } from "./interfaces/http/routes/geo.route";
 import { createPlaceRoute } from "./interfaces/http/routes/place.route";
+import { createMediaRoute } from "./interfaces/http/routes/media.route";
 
 import { NotFoundError } from "./shared/errors/app-error";
 import { sendSuccess } from "./shared/http/api-response";
+import { LocalObjectStorageService } from "./infrastructure/storage/local-object-storage.service";
 
 interface AppDependencies {
   prisma: PrismaClient;
@@ -70,7 +72,7 @@ export function createApp({ prisma, redis }: AppDependencies): Express {
   const optionalAuth = resolveOptionalCurrentUser(currentUserResolver);
   const requireAuthForPlaces = requireAuth;
   const resolveRequiredCurrentUser = resolveCurrentUser(currentUserResolver);
-
+  const objectStorage = new LocalObjectStorageService();
   const authController = new AuthController();
 
   // Geo foundation
@@ -109,7 +111,16 @@ export function createApp({ prisma, redis }: AppDependencies): Express {
       optionalAuth,
     }),
   );
-
+  app.use(
+    createMediaRoute({
+      prisma,
+      storage: objectStorage,
+      attachAuthContext,
+      requireAuth,
+      resolveCurrentUser: resolveRequiredCurrentUser,
+      optionalAuth,
+    }),
+  );
   app.use((req: Request, res: Response, next: NextFunction) => {
     const requestLogger = res.locals.logger ?? logger;
 

@@ -40,3 +40,10 @@ export class ForbiddenError extends AppError {
     super("FORBIDDEN", 403, message, details);
   }
 }
+
+export class BadRequestError extends AppError {
+  constructor(message = "Bad request", details?: unknown) {
+    super("BAD_REQUEST", 400, message, details);
+    this.name = "BadRequestError";
+  }
+}

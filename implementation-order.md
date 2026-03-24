@@ -234,6 +234,22 @@ Media is often a supporting subdomain rather than a top-level aggregate root.
 
 ---
 
+## Out of scope for now
+
+rich gallery editing UI rules
+
+advanced transcoding pipeline
+
+AI moderation
+
+perceptual dedupe
+
+CDN optimization logic
+
+complex media ordering rules beyond basics
+
+editing/cropping tools
+
 # Phase 5: Content and Activity
 
 ## Goal
