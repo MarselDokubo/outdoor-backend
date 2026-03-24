@@ -37,6 +37,7 @@ import { createNotificationsRoutes } from "./interfaces/http/routes/notification
 import { createGeoRoutes } from "./interfaces/http/routes/geo.route";
 import { createPlaceRoute } from "./interfaces/http/routes/place.route";
 import { createMediaRoute } from "./interfaces/http/routes/media.route";
+import { createVisitRoute } from "./interfaces/http/routes/visit.route";
 
 import { NotFoundError } from "./shared/errors/app-error";
 import { sendSuccess } from "./shared/http/api-response";
@@ -119,6 +120,14 @@ export function createApp({ prisma, redis }: AppDependencies): Express {
       requireAuth,
       resolveCurrentUser: resolveRequiredCurrentUser,
       optionalAuth,
+    }),
+  );
+  app.use(
+    createVisitRoute({
+      prisma,
+      attachAuthContext,
+      requireAuth,
+      resolveCurrentUser: resolveRequiredCurrentUser,
     }),
   );
   app.use((req: Request, res: Response, next: NextFunction) => {

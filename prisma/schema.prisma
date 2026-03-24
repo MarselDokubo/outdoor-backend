@@ -249,3 +249,32 @@ model MediaAttachment {
   @@index([mediaAssetId, detachedAt])
   @@index([attachedByUserId])
 }
+
+enum VisitStatus {
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum VisitSourceType {
+  MANUAL_CHECK_IN
+  SYSTEM_DETECTED
+}
+
+model Visit {
+  id              String          @id @db.VarChar(50)
+  userId          String          @db.VarChar(50)
+  placeId         String          @db.VarChar(50)
+  status          VisitStatus
+  sourceType      VisitSourceType
+  startedAt       DateTime
+  endedAt         DateTime?
+  confidenceScore Int?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@index([userId, status])
+  @@index([placeId, status])
+  @@index([placeId, startedAt])
+  @@index([userId, startedAt])
+}

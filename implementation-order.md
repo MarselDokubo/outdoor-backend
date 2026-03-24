@@ -250,6 +250,14 @@ complex media ordering rules beyond basics
 
 editing/cropping tools
 
+add S3/R2 provider
+
+env config
+
+provider selection in app.ts
+
+signed URL strategy
+
 # Phase 5: Content and Activity
 
 ## Goal
