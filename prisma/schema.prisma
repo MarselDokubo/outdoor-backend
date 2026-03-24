@@ -278,3 +278,33 @@ model Visit {
   @@index([placeId, startedAt])
   @@index([userId, startedAt])
 }
+
+// Merge this into prisma/schema.prisma
+
+enum PostPublicationStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum PostVisibility {
+  PUBLIC
+  UNLISTED
+  PRIVATE
+}
+
+model Post {
+  id                String                @id
+  authorUserId      String
+  placeId           String
+  body              String                @db.Text
+  publicationStatus PostPublicationStatus
+  visibility        PostVisibility
+  createdAt         DateTime              @default(now())
+  updatedAt         DateTime
+  publishedAt       DateTime?
+  archivedAt        DateTime?
+
+  @@index([placeId, publicationStatus, visibility, createdAt(sort: Desc)])
+  @@index([authorUserId, createdAt(sort: Desc)])
+}
