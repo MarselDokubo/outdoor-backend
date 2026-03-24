@@ -43,6 +43,7 @@ import { createPostRoute } from "./interfaces/http/routes/post.route";
 import { NotFoundError } from "./shared/errors/app-error";
 import { sendSuccess } from "./shared/http/api-response";
 import { LocalObjectStorageService } from "./infrastructure/storage/local-object-storage.service";
+import { createEventRoute } from "./interfaces/http/routes/event.route";
 
 interface AppDependencies {
   prisma: PrismaClient;
@@ -133,6 +134,15 @@ export function createApp({ prisma, redis }: AppDependencies): Express {
   );
   app.use(
     createPostRoute({
+      prisma,
+      attachAuthContext,
+      requireAuth,
+      resolveCurrentUser: resolveCurrentUser(currentUserResolver),
+      optionalAuth: resolveOptionalCurrentUser(currentUserResolver),
+    }),
+  );
+  app.use(
+    createEventRoute({
       prisma,
       attachAuthContext,
       requireAuth,

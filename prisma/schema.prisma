@@ -308,3 +308,37 @@ model Post {
   @@index([placeId, publicationStatus, visibility, createdAt(sort: Desc)])
   @@index([authorUserId, createdAt(sort: Desc)])
 }
+
+enum EventVisibility {
+  PUBLIC
+  UNLISTED
+  PRIVATE
+}
+
+enum EventStatus {
+  DRAFT
+  PUBLISHED
+  CANCELLED
+  ARCHIVED
+}
+
+model Event {
+  id          String          @id
+  hostUserId  String
+  placeId     String?
+  title       String
+  summary     String?
+  description String?
+  startsAt    DateTime
+  endsAt      DateTime
+  visibility  EventVisibility @default(PUBLIC)
+  status      EventStatus     @default(DRAFT)
+  publishedAt DateTime?
+  cancelledAt DateTime?
+  archivedAt  DateTime?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime
+
+  @@index([placeId, status, visibility, startsAt])
+  @@index([hostUserId, createdAt])
+}
