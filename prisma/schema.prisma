@@ -34,6 +34,8 @@ model User {
 
   authIdentities  AuthIdentity[]
   roleAssignments UserRoleAssignment[]
+  reactions       Reaction[]
+  saves           Save[]
 
   @@index([status])
 }
@@ -341,4 +343,46 @@ model Event {
 
   @@index([placeId, status, visibility, startsAt])
   @@index([hostUserId, createdAt])
+}
+
+enum EngagementTargetType {
+  PLACE
+  POST
+  EVENT
+}
+
+enum ReactionType {
+  LIKE
+  INTERESTED
+  FIRE
+}
+
+model Reaction {
+  id           String               @id @default(cuid())
+  userId       String
+  targetType   EngagementTargetType
+  targetId     String
+  reactionType ReactionType
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, targetType, targetId], map: "reaction_user_target_unique")
+  @@index([targetType, targetId], map: "reaction_target_idx")
+  @@index([userId, createdAt], map: "reaction_user_created_idx")
+}
+
+model Save {
+  id         String               @id @default(cuid())
+  userId     String
+  targetType EngagementTargetType
+  targetId   String
+  createdAt  DateTime             @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, targetType, targetId], map: "save_user_target_unique")
+  @@index([targetType, targetId], map: "save_target_idx")
+  @@index([userId, createdAt], map: "save_user_created_idx")
 }
