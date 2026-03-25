@@ -37,6 +37,7 @@ model User {
   reactions       Reaction[]
   saves           Save[]
   comments        Comment[]
+  follows         Follow[]             @relation("UserFollows")
 
   @@index([status])
 }
@@ -411,3 +412,32 @@ model Comment {
   @@index([targetType, targetId, status, createdAt(sort: Asc)])
   @@index([authorUserId, createdAt(sort: Desc)])
 }
+
+// Phase 6C Follow graph
+// Merge this into prisma/schema.prisma
+
+// Add this enum near your other enums
+
+enum FollowTargetType {
+  USER
+  PLACE
+}
+
+// Add this model near the rest of the activity / engagement models
+
+model Follow {
+  id             String           @id @db.VarChar(50)
+  followerUserId String           @db.VarChar(50)
+  targetType     FollowTargetType
+  targetId       String           @db.VarChar(50)
+  createdAt      DateTime         @default(now())
+
+  follower User @relation("UserFollows", fields: [followerUserId], references: [id], onDelete: Cascade)
+
+  @@unique([followerUserId, targetType, targetId], map: "uq_follow_follower_target")
+  @@index([targetType, targetId, createdAt], map: "idx_follow_target_created")
+  @@index([followerUserId, createdAt], map: "idx_follow_follower_created")
+}
+
+// Add this relation field inside model User
+// follows Follow[] @relation("UserFollows")
