@@ -45,6 +45,7 @@ import { sendSuccess } from "./shared/http/api-response";
 import { LocalObjectStorageService } from "./infrastructure/storage/local-object-storage.service";
 import { createEventRoute } from "./interfaces/http/routes/event.route";
 import { createEngagementRoute } from "./interfaces/http/routes/engagement.route";
+import { createCommentRoute } from "./interfaces/http/routes/comment.route";
 
 interface AppDependencies {
   prisma: PrismaClient;
@@ -153,6 +154,15 @@ export function createApp({ prisma, redis }: AppDependencies): Express {
   );
   app.use(
     createEngagementRoute({
+      prisma,
+      attachAuthContext,
+      requireAuth,
+      resolveCurrentUser: resolveCurrentUser(currentUserResolver),
+      optionalAuth: resolveOptionalCurrentUser(currentUserResolver),
+    }),
+  );
+  app.use(
+    createCommentRoute({
       prisma,
       attachAuthContext,
       requireAuth,

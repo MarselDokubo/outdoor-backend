@@ -36,6 +36,7 @@ model User {
   roleAssignments UserRoleAssignment[]
   reactions       Reaction[]
   saves           Save[]
+  comments        Comment[]
 
   @@index([status])
 }
@@ -385,4 +386,28 @@ model Save {
   @@unique([userId, targetType, targetId], map: "save_user_target_unique")
   @@index([targetType, targetId], map: "save_target_idx")
   @@index([userId, createdAt], map: "save_user_created_idx")
+}
+
+enum CommentStatus {
+  ACTIVE
+  DELETED
+}
+
+model Comment {
+  id           String               @id
+  authorUserId String
+  targetType   EngagementTargetType
+  targetId     String
+  body         String               @db.Text
+  status       CommentStatus        @default(ACTIVE)
+  editedAt     DateTime?
+  deletedAt    DateTime?
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+
+  author User @relation(fields: [authorUserId], references: [id])
+
+  @@index([targetType, targetId, createdAt(sort: Asc)])
+  @@index([targetType, targetId, status, createdAt(sort: Asc)])
+  @@index([authorUserId, createdAt(sort: Desc)])
 }
