@@ -38,6 +38,7 @@ model User {
   saves           Save[]
   comments        Comment[]
   follows         Follow[]             @relation("UserFollows")
+  impressions     Impression[]
 
   @@index([status])
 }
@@ -441,3 +442,26 @@ model Follow {
 
 // Add this relation field inside model User
 // follows Follow[] @relation("UserFollows")
+
+// Phase 6D: Views / Impressions
+// Merge this into prisma/schema.prisma
+
+model Impression {
+  id           String               @id @db.VarChar(50)
+  targetType   EngagementTargetType
+  targetId     String               @db.VarChar(50)
+  viewerUserId String?              @db.VarChar(50)
+  sessionKey   String?              @db.VarChar(120)
+  createdAt    DateTime             @default(now())
+
+  viewer User? @relation(fields: [viewerUserId], references: [id], onDelete: SetNull)
+
+  @@index([targetType, targetId, createdAt(sort: Desc)], map: "idx_impression_target_created")
+  @@index([viewerUserId, createdAt(sort: Desc)], map: "idx_impression_viewer_created")
+  @@index([sessionKey, createdAt(sort: Desc)], map: "idx_impression_session_created")
+  @@index([targetType, targetId, viewerUserId, createdAt(sort: Desc)], map: "idx_impression_target_viewer_created")
+  @@index([targetType, targetId, sessionKey, createdAt(sort: Desc)], map: "idx_impression_target_session_created")
+}
+
+// Add this relation field inside model User
+// impressions Impression[]
