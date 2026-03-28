@@ -143,8 +143,9 @@ model Place {
   updatedAt         DateTime               @updatedAt
   archivedAt        DateTime?
 
-  claims           PlaceClaim[]
-  ownerMemberships PlaceOwnerMembership[]
+  claims            PlaceClaim[]
+  ownerMemberships  PlaceOwnerMembership[]
+  hotspotPlacements HotspotPlacePlacement[]
 
   @@index([publicationStatus, visibility])
   @@index([categoryCode])
@@ -465,3 +466,65 @@ model Impression {
 
 // Add this relation field inside model User
 // impressions Impression[]
+
+// Phase 7A: Hotspot read model
+// Merge this into prisma/schema.prisma when moving from live-computed hotspots
+// to persisted / materialized hotspot snapshots.
+
+enum HotspotWindowType {
+  LAST_30_MINUTES
+  LAST_2_HOURS
+  LAST_24_HOURS
+}
+
+model HotspotSnapshot {
+  id               String            @id @db.VarChar(50)
+  cellId           String            @db.VarChar(32)
+  h3Resolution     Int
+  windowType       HotspotWindowType
+  windowStartedAt  DateTime
+  windowEndedAt    DateTime
+  centerLatitude   Float
+  centerLongitude  Float
+  score            Float
+  rank             Int?
+  placeCount       Int               @default(0)
+  uniqueActorCount Int               @default(0)
+  visitCount       Int               @default(0)
+  reactionCount    Int               @default(0)
+  commentCount     Int               @default(0)
+  saveCount        Int               @default(0)
+  impressionCount  Int               @default(0)
+  followCount      Int               @default(0)
+  postCount        Int               @default(0)
+  eventCount       Int               @default(0)
+  city             String?
+  area             String?
+  computedAt       DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  places HotspotPlacePlacement[]
+
+  @@unique([cellId, h3Resolution, windowType, windowEndedAt], map: "uq_hotspot_snapshot_cell_window")
+  @@index([windowType, windowEndedAt, rank], map: "idx_hotspot_snapshot_window_rank")
+  @@index([windowType, windowEndedAt, score(sort: Desc)], map: "idx_hotspot_snapshot_window_score")
+  @@index([city, area, windowType, windowEndedAt], map: "idx_hotspot_snapshot_city_area_window")
+}
+
+model HotspotPlacePlacement {
+  hotspotId String   @db.VarChar(50)
+  placeId   String
+  score     Float
+  rank      Int
+  createdAt DateTime @default(now())
+
+  hotspot HotspotSnapshot @relation(fields: [hotspotId], references: [id], onDelete: Cascade)
+  place   Place           @relation(fields: [placeId], references: [id], onDelete: Cascade)
+
+  @@id([hotspotId, placeId])
+  @@index([placeId, rank], map: "idx_hotspot_place_rank")
+  @@index([hotspotId, rank], map: "idx_hotspot_placement_rank")
+}
+
+// Add this relation field inside model Place:
+// hotspotPlacements HotspotPlacePlacement[]

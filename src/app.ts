@@ -47,6 +47,7 @@ import { createEventRoute } from "./interfaces/http/routes/event.route";
 import { createEngagementRoute } from "./interfaces/http/routes/engagement.route";
 import { createCommentRoute } from "./interfaces/http/routes/comment.route";
 import { createFollowRoute } from "./interfaces/http/routes/follow.route";
+import { createDiscoveryRoute } from "./interfaces/http/routes/discovery.route";
 
 interface AppDependencies {
   prisma: PrismaClient;
@@ -178,6 +179,11 @@ export function createApp({ prisma, redis }: AppDependencies): Express {
       requireAuth,
       resolveCurrentUser: resolveCurrentUser(currentUserResolver),
       optionalAuth: resolveOptionalCurrentUser(currentUserResolver),
+    }),
+  );
+  app.use(
+    createDiscoveryRoute({
+      prisma,
     }),
   );
   app.use((req: Request, res: Response, next: NextFunction) => {
